@@ -1,0 +1,5 @@
+# Data Directory
+
+This directory is used to store datasets for recommender system experiments.
+
+Place your data files here before running experiments.
