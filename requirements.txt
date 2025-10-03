@@ -1,3 +1,7 @@
 pandas
+scikit-surprise
 codecarbon
 psutil
+scikit-learn
+numpy<2
+lightfm

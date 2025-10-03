@@ -1,124 +1,72 @@
-#!/usr/bin/env python3
-"""
-Sample SVD (Singular Value Decomposition) model for recommender systems.
-This script simulates a simple recommendation model for demonstration purposes.
-"""
-import time
-import numpy as np
 import pandas as pd
+import os
+import sys
+from surprise import SVD, Dataset, Reader
 
-
-def generate_sample_data(n_users=1000, n_items=500):
-    """Generate sample rating data for demonstration."""
-    print("Generating sample rating data...")
-    np.random.seed(42)
-    
-    # Generate sparse ratings (not all users rate all items)
-    n_ratings = int(n_users * n_items * 0.1)  # 10% density
-    user_ids = np.random.randint(0, n_users, n_ratings)
-    item_ids = np.random.randint(0, n_items, n_ratings)
-    ratings = np.random.randint(1, 6, n_ratings)  # Ratings from 1 to 5
-    
-    df = pd.DataFrame({
-        'user_id': user_ids,
-        'item_id': item_ids,
-        'rating': ratings
-    })
-    
-    # Remove duplicate user-item pairs, keeping the first
-    df = df.drop_duplicates(subset=['user_id', 'item_id'])
-    
-    print(f"Generated {len(df)} ratings for {n_users} users and {n_items} items")
-    return df
-
-
-def train_svd_model(ratings_df, n_factors=50, n_epochs=20):
+def preprocess_data(data_path):
     """
-    Train a simple SVD model using gradient descent.
-    This is a simplified version for demonstration purposes.
+    Carga los datos de train y antitest en el formato de la librería Surprise.
     """
-    print(f"Training SVD model with {n_factors} factors for {n_epochs} epochs...")
-    
-    n_users = ratings_df['user_id'].max() + 1
-    n_items = ratings_df['item_id'].max() + 1
-    
-    # Initialize user and item factor matrices
-    np.random.seed(42)
-    user_factors = np.random.normal(0, 0.1, (n_users, n_factors))
-    item_factors = np.random.normal(0, 0.1, (n_items, n_factors))
-    
-    # Simple training loop (simulated)
-    learning_rate = 0.01
-    regularization = 0.02
-    
-    for epoch in range(n_epochs):
-        # Simulate some computation time
-        time.sleep(0.1)
-        
-        # In a real implementation, you would update factors here
-        # For now, we just simulate the computation
-        error = 0
-        for _, row in ratings_df.iterrows():
-            user_id = int(row['user_id'])
-            item_id = int(row['item_id'])
-            rating = row['rating']
-            
-            # Predict rating
-            prediction = np.dot(user_factors[user_id], item_factors[item_id])
-            error += (rating - prediction) ** 2
-            
-        rmse = np.sqrt(error / len(ratings_df))
-        
-        if (epoch + 1) % 5 == 0:
-            print(f"Epoch {epoch + 1}/{n_epochs}, RMSE: {rmse:.4f}")
-    
-    print("Model training completed!")
-    return user_factors, item_factors
+    print(f"1. Preprocesando datos para Surprise desde: {data_path}")
+    train_file = os.path.join(data_path, 'train.csv')
+    antitest_file = os.path.join(data_path, 'antitest.csv')
 
+    train_df = pd.read_csv(train_file)
+    antitest_df = pd.read_csv(antitest_file)
 
-def make_recommendations(user_factors, item_factors, user_id, top_k=10):
-    """Generate top-k recommendations for a user."""
-    print(f"Generating top-{top_k} recommendations for user {user_id}...")
+    reader = Reader(rating_scale=(1, 5))
     
-    # Compute predicted ratings for all items
-    predictions = np.dot(user_factors[user_id], item_factors.T)
+    # Cargar el conjunto de entrenamiento
+    train_data = Dataset.load_from_df(train_df[['userId', 'movieId', 'rating']], reader)
+    trainset = train_data.build_full_trainset()
     
-    # Get top-k items
-    top_items = np.argsort(predictions)[-top_k:][::-1]
-    
-    print(f"Top {top_k} recommended items: {top_items.tolist()}")
-    return top_items
+    # El antitest set se convierte a una lista de tuplas para la predicción
+    antitest_tuples = [tuple(x) for x in antitest_df[['userId', 'movieId', 'rating']].to_numpy()]
 
+    print("   Datos cargados y listos para Surprise.")
+    return trainset, antitest_tuples
 
-def main():
-    """Main function to run the SVD model."""
-    print("=" * 50)
-    print("SVD Recommender System Model")
-    print("=" * 50)
-    
-    # Generate sample data
-    ratings_df = generate_sample_data(n_users=1000, n_items=500)
-    
-    # Train the model
-    user_factors, item_factors = train_svd_model(
-        ratings_df,
-        n_factors=50,
-        n_epochs=20
-    )
-    
-    # Make sample recommendations
-    sample_user_id = 0
-    recommendations = make_recommendations(
-        user_factors,
-        item_factors,
-        sample_user_id,
-        top_k=10
-    )
-    
-    print("=" * 50)
-    print("SVD Model execution completed successfully!")
-    print("=" * 50)
+def train_model(trainset):
+    """
+    Entrena un modelo SVD con el conjunto de datos de entrenamiento.
+    """
+    print("2. Entrenando el modelo SVD...")
+    algo = SVD(n_factors=100, n_epochs=20, random_state=42)
+    algo.fit(trainset)
+    print("   Entrenamiento completado.")
+    return algo
 
+def generate_predictions(model, antitest_set):
+    """
+    Genera predicciones para el conjunto antitest.
+    """
+    print("3. Generando predicciones con SVD...")
+    predictions = model.test(antitest_set)
+    
+    # Convertir las predicciones a un DataFrame de Pandas
+    predictions_df = pd.DataFrame(predictions, columns=['userId', 'movieId', 'actual_rating', 'prediction', 'details'])
+    predictions_df = predictions_df[['userId', 'movieId', 'prediction']]
+    
+    print(f"   Se generaron {len(predictions_df)} predicciones.")
+    return predictions_df
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        print("Error: Por favor, proporciona el porcentaje del dataset (ej. 10, 25, ...).")
+        sys.exit(1)
+    
+    dataset_percentage = sys.argv[1]
+    DATA_PATH = os.path.join('data', dataset_percentage)
+
+    # 1. Preprocesar datos
+    train_set, antitest_data = preprocess_data(DATA_PATH)
+    
+    # 2. Entrenar el modelo
+    trained_model = train_model(train_set)
+    
+    # 3. Generar predicciones
+    predictions = generate_predictions(trained_model, antitest_data)
+    
+    print("\n--- Proceso del modelo SVD finalizado ---")
+    print("Ejemplo de 5 predicciones:")
+    print(predictions.head())

@@ -1,5 +1,3 @@
 # Data Directory
 
-This directory is used to store datasets for recommender system experiments.
-
-Place your data files here before running experiments.
+En la carpeta ml-1m deben estar los datos del dataset movielens 1M ratings.csv, movies.csv y users.csv

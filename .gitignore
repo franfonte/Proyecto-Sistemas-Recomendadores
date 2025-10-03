@@ -34,3 +34,12 @@ env/
 
 # CodeCarbon outputs
 emissions.csv
+
+# Archivos generados pesados
+data/10
+data/25
+data/50
+data/75
+data/100
+
+# Extras
