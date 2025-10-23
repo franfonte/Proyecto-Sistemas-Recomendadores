@@ -65,13 +65,16 @@ python prepare_datasets.py
 ### Listar modelos disponibles
 
 ```bash
-python run_experiment.py --list
+python3 run_experiment.py --list
 ```
 
 ### Ejecutar un modelo con seguimiento de carbono
 
 ```bash
-python run_experiment.py --model svd_model --dataset_percentage 10
+python3 run_experiment.py --model ncf_model --dataset_percentage 10
+python3 run_experiment.py --model ncf_model --dataset_percentage 100
+python3 run_experiment.py --model lightgcn_model --dataset_percentage 10
+python3 run_experiment.py --model lightgcn_model --dataset_percentage 100
 ```
 
 ### Ejemplos de Uso

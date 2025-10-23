@@ -5,3 +5,6 @@ psutil
 scikit-learn
 numpy<2
 lightfm
+torch
+torch-geometric
+scipy
