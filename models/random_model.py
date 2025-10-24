@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import random # Import needed for consistency, though only numpy is used here
+
+# --- Constante para Replicabilidad ---
+RANDOM_SEED = 42
 
 def preprocess_data(data_path):
     """
@@ -10,10 +14,10 @@ def preprocess_data(data_path):
     print(f"1. Preprocesando datos desde: {data_path}")
     train_file = os.path.join(data_path, 'train.csv')
     antitest_file = os.path.join(data_path, 'antitest.csv')
-    
+
     train_df = pd.read_csv(train_file)
     antitest_df = pd.read_csv(antitest_file)
-    
+
     print("   Datos cargados en DataFrames.")
     return train_df, antitest_df
 
@@ -31,18 +35,23 @@ def generate_predictions(model_info, antitest_df):
     """
     Genera predicciones aleatorias para cada par (usuario, item) en el antitest set.
     """
+    # <<<<<<< CAMBIO AQUÍ: Fijar la semilla de NumPy >>>>>>>
+    np.random.seed(RANDOM_SEED)
+    print(f"   Semilla de NumPy fijada en: {RANDOM_SEED}")
+
     print("3. Generando predicciones aleatorias...")
-    
+
     min_rating = model_info['min_rating']
     max_rating = model_info['max_rating']
-    
+
     # Genera un número aleatorio para cada fila en el antitest_df
+    # La generación ahora será determinista
     predictions = np.random.uniform(min_rating, max_rating, len(antitest_df))
-    
+
     # Crea una copia para evitar SettingWithCopyWarning
     predictions_df = antitest_df.copy()
     predictions_df['prediction'] = predictions
-    
+
     print(f"   Se generaron {len(predictions_df)} predicciones.")
     return predictions_df
 
@@ -50,19 +59,19 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Error: Por favor, proporciona el porcentaje del dataset (ej. 10, 25, ...).")
         sys.exit(1)
-    
+
     dataset_percentage = sys.argv[1]
     DATA_PATH = os.path.join('data', dataset_percentage)
-    
+
     # 1. Preprocesar datos
     train_data, antitest_data = preprocess_data(DATA_PATH)
-    
+
     # 2. "Entrenar" el modelo
     model = train_model(train_data)
-    
+
     # 3. Generar predicciones
     predictions = generate_predictions(model, antitest_data)
-    
+
     print("\n--- Proceso del modelo aleatorio finalizado ---")
     print("Ejemplo de 5 predicciones:")
     print(predictions.head())

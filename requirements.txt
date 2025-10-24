@@ -8,3 +8,4 @@ lightfm
 torch
 torch-geometric
 scipy
+implicit

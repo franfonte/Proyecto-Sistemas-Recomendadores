@@ -1,6 +1,4 @@
 import os
-# Ya no se necesita ninguna configuración especial para codecarbon.
-
 import argparse
 import sys
 import importlib
@@ -9,7 +7,7 @@ import pandas as pd
 from codecarbon import EmissionsTracker
 from evaluate_results import calculate_rmse, calculate_ranking_metrics
 
-# --- NUEVAS IMPORTACIONES PARA GUARDAR MODELOS ---
+# --- IMPORTACIONES PARA GUARDAR MODELOS ---
 import torch 
 from surprise.dump import dump as surprise_dump
 import pickle
@@ -103,11 +101,12 @@ if __name__ == "__main__":
             surprise_dump(MODEL_SAVE_PATH, algo=trained_model)
             print(f"   Modelo Surprise guardado en: {MODEL_SAVE_PATH}")
 
-        elif args.model_name == 'lightfm_model':
-            # Guardar con pickle (método estándar para LightFM)
+        # <<<<<<< CAMBIO AQUÍ: Añadida lógica para LightFM y ALS (ambos usan pickle) >>>>>>>
+        elif args.model_name in ['lightfm_model', 'als_model']:
+            # Guardar con pickle
             with open(MODEL_SAVE_PATH, 'wb') as f:
                 pickle.dump(trained_model, f)
-            print(f"   Modelo LightFM (pickle) guardado en: {MODEL_SAVE_PATH}")
+            print(f"   Modelo ({args.model_name}) guardado con pickle en: {MODEL_SAVE_PATH}")
         
         elif args.model_name == 'most_popular_model':
             # El "modelo" es una lista, guardar como JSON
@@ -186,3 +185,4 @@ if __name__ == "__main__":
     print(f"  - nDCG@10           : {ndcg:.4f}")
     print(f"  - Training CO₂ (g)  : {final_results['training_footprint']['co2_emissions_g']:.4f}")
     print(f"  - Prediction CO₂ (g): {final_results['prediction_footprint']['co2_emissions_g']:.4f}")
+    
