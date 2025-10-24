@@ -59,17 +59,17 @@
                 "ndcg_at_10": 0.0318982874408046,
                 "precision_at_10": 0.011977373339891786,
                 "recall_at_10": 0.05090136639802258,
-                "rmse": 2.092120912048889
+                "rmse": 2.0921209118019326
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.014929784016781859,
-                "duration_seconds": 38.11204941700271,
-                "energy_consumed_kWh": 5.128518484843294e-05
+                "co2_emissions_g": 0.01807173635424199,
+                "duration_seconds": 46.92684362499858,
+                "energy_consumed_kWh": 6.207808086290201e-05
             },
             "training_footprint": {
-                "co2_emissions_g": 0.023009813812992847,
-                "duration_seconds": 53.06253370799823,
-                "energy_consumed_kWh": 7.90408322987735e-05
+                "co2_emissions_g": 0.021247710244584418,
+                "duration_seconds": 56.86960754200118,
+                "energy_consumed_kWh": 7.298784404882096e-05
             }
         },
         "most_popular_model": {

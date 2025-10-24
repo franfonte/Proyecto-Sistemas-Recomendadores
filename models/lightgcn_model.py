@@ -313,11 +313,6 @@ def generate_predictions(model, prediction_components):
     with torch.no_grad():
         final_user_emb, final_item_emb = model.forward() # Calcular embeddings finales una vez
 
-    # <<< DEBUG PRINT 1: Verificar embeddings finales >>>
-    print(f"   DEBUG: final_user_emb shape={final_user_emb.shape}, mean={final_user_emb.mean():.4f}, std={final_user_emb.std():.4f}, min={final_user_emb.min():.4f}, max={final_user_emb.max():.4f}")
-    print(f"   DEBUG: final_item_emb shape={final_item_emb.shape}, mean={final_item_emb.mean():.4f}, std={final_item_emb.std():.4f}, min={final_item_emb.min():.4f}, max={final_item_emb.max():.4f}")
-    # <<< FIN DEBUG PRINT 1 >>>
-
     antitest_mapped = antitest_df.copy()
     antitest_mapped['user_idx'] = antitest_mapped['userId'].map(user_map)
     antitest_mapped['item_idx'] = antitest_mapped['movieId'].map(item_map)
@@ -346,23 +341,16 @@ def generate_predictions(model, prediction_components):
     else:
         removed_count = 0
 
-    # <<< DEBUG PRINT 2: Verificar embeddings del lote (después de filtrar índices) >>>
     if len(user_indices) > 0 and len(item_indices) > 0: # Solo si quedan índices válidos
         user_emb_batch = final_user_emb[user_indices]
         item_emb_batch = final_item_emb[item_indices]
-        print(f"   DEBUG: user_emb_batch shape={user_emb_batch.shape}, mean={user_emb_batch.mean():.4f}, std={user_emb_batch.std():.4f}")
-        print(f"   DEBUG: item_emb_batch shape={item_emb_batch.shape}, mean={item_emb_batch.mean():.4f}, std={item_emb_batch.std():.4f}")
     else:
-        print("   DEBUG: No quedan índices válidos después del filtrado, no se pueden calcular embeddings de lote.")
         user_emb_batch, item_emb_batch = None, None # Marcar como None
-    # <<< FIN DEBUG PRINT 2 >>>
-
 
     # Calcular predicciones solo si hay embeddings válidos
     if user_emb_batch is not None and item_emb_batch is not None:
         
         # <<<<<<< CAMBIO CRÍTICO: Forzar cálculo de predicción en CPU >>>>>>>
-        print("   DEBUG: Moviendo lotes de embeddings a CPU para cálculo de producto punto.")
         user_emb_batch_cpu = user_emb_batch.to('cpu')
         item_emb_batch_cpu = item_emb_batch.to('cpu')
         
@@ -370,17 +358,9 @@ def generate_predictions(model, prediction_components):
         predictions = torch.einsum("bd,bd->b", user_emb_batch_cpu, item_emb_batch_cpu)
         # predictions = torch.sum(user_emb_batch_cpu * item_emb_batch_cpu, dim=1) # Alternativa
 
-        # <<< DEBUG PRINT 3: Verificar predicciones (Tensor PyTorch, ahora en CPU) >>>
-        print(f"   DEBUG: predictions tensor (primeros 10): {predictions[:10]}")
-        # <<< FIN DEBUG PRINT 3 >>>
-
         # Crear DataFrame final
         predictions_df = valid_antitest_mapped.copy() # Usar el DF ya filtrado por valid_mask
         predictions_np = predictions.cpu().numpy() # .cpu() aquí es redundante pero no daña
-
-        # <<< DEBUG PRINT 4: Verificar predicciones (Array NumPy) >>>
-        print(f"   DEBUG: predictions numpy array (primeros 10): {predictions_np[:10]}")
-        # <<< FIN DEBUG PRINT 4 >>>
 
         predictions_df['prediction'] = predictions_np
         print(f"   Se generaron {len(predictions_df)} predicciones válidas.")
