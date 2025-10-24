@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 import scipy.sparse as sp # Ya estaba importado
 import random # Ya estaba importado
 import time # Ya estaba importado
+import torch.nn.functional as F # Importar F
 
 # --- Constante para Replicabilidad ---
 RANDOM_SEED = 42
@@ -20,30 +21,30 @@ def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # torch.mps.manual_seed(seed) # Descomentar si se usa MPS y se requiere
-    # Para mayor determinismo en CUDA (no aplica a MPS directamente, pero buena práctica si se cambia de backend)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
+    if torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
     print(f"   Semillas fijadas en: {seed}")
 
 # --- Worker Init Fn para DataLoader ---
 def seed_worker(worker_id):
-    # Asegura que cada worker del DataLoader tenga una semilla reproducible pero diferente
-    # Es crucial para el muestreo negativo en BPRDataset
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
 
-# --- Hiperparámetros por Defecto ---
+# --- Hiperparámetros (Basados en el notebook y nuestro proyecto) ---
 EMBEDDING_DIM = 64
-NUM_LAYERS = 3
-LEARNING_RATE = 0.0001
-BATCH_SIZE = 1024
-EPOCHS = 30
-WEIGHT_DECAY = 1e-4 # Parámetro de regularización L2 estándar
+NUM_LAYERS = 3 
+LEARNING_RATE = 0.001 # LR estándar del paper
+BATCH_SIZE = 1024 
+EPOCHS = 30 
+WEIGHT_DECAY = 1e-4 # Regularización L2 manual
 
-# --- 1. Arquitectura del Modelo LightGCN ---
+# --- 1. Arquitectura del Modelo LightGCN (Implementación Pura de PyTorch) ---
 class LightGCN(nn.Module):
     def __init__(self, num_users, num_items, num_layers, embedding_dim, norm_adj_matrix):
         super(LightGCN, self).__init__()
@@ -52,19 +53,20 @@ class LightGCN(nn.Module):
         self.num_layers = num_layers
         self.embedding_dim = embedding_dim
 
+        # Embeddings iniciales (serán los únicos parámetros entrenables)
         self.user_embedding = nn.Embedding(num_users, embedding_dim)
         self.item_embedding = nn.Embedding(num_items, embedding_dim)
-        # La inicialización se controla ahora con torch.manual_seed global
+        
+        # Inicialización normal (como en el notebook)
+        nn.init.normal_(self.user_embedding.weight, std=0.1)
+        nn.init.normal_(self.item_embedding.weight, std=0.1)
+        print('   Modelo LightGCN (PyTorch Puro) inicializado con embeddings Normal(0, 0.1)')
 
-        # La conversión y coalesce se hacen al recibir la matriz
-        if isinstance(norm_adj_matrix, torch.Tensor):
-             self.norm_adj_matrix = norm_adj_matrix.coalesce()
-        else:
-             self.norm_adj_matrix = self.convert_sp_mat_to_sp_tensor(norm_adj_matrix).coalesce()
+        # Convertir la matriz SciPy a un Tensor Disperso de PyTorch
+        self.norm_adj_matrix = self.convert_sp_mat_to_sp_tensor(norm_adj_matrix).coalesce()
 
-
-    # Helper function para convertir matriz dispersa de SciPy a Tensor disperso de PyTorch
     def convert_sp_mat_to_sp_tensor(self, X):
+        """Convierte una matriz dispersa de SciPy a un Tensor disperso de PyTorch."""
         coo = X.tocoo().astype(np.float32)
         row = torch.from_numpy(coo.row).long()
         col = torch.from_numpy(coo.col).long()
@@ -73,36 +75,61 @@ class LightGCN(nn.Module):
         return torch.sparse_coo_tensor(index, data, torch.Size(coo.shape))
 
     def forward(self):
+        """Calcula los embeddings finales después de la propagación."""
         initial_embeddings = torch.cat([self.user_embedding.weight, self.item_embedding.weight], dim=0)
-        all_layer_embeddings = [initial_embeddings]
+        all_embeddings = [initial_embeddings] # Lista para acumular embeddings de capa (incluida la 0)
         current_embeddings = initial_embeddings
-        device = initial_embeddings.device
+        device = initial_embeddings.device # Dispositivo (ej. MPS)
+
+        # Mover la matriz al dispositivo correcto (CPU para sparse.mm en MPS)
+        norm_adj_matrix_dev = self.norm_adj_matrix.to('cpu') 
 
         for _ in range(self.num_layers):
+            # Mover embeddings a CPU para la multiplicación
             cpu_embeddings = current_embeddings.to('cpu')
-            norm_adj_matrix_cpu = self.norm_adj_matrix.to('cpu')
-            propagated_embeddings = torch.sparse.mm(norm_adj_matrix_cpu, cpu_embeddings)
+            # Propagar
+            propagated_embeddings = torch.sparse.mm(norm_adj_matrix_dev, cpu_embeddings)
+            # Mover de vuelta al dispositivo principal
             current_embeddings = propagated_embeddings.to(device)
-            all_layer_embeddings.append(current_embeddings)
+            all_embeddings.append(current_embeddings)
 
-        final_embeddings = torch.mean(torch.stack(all_layer_embeddings, dim=1), dim=1)
+        # Combinar embeddings (media de todas las capas, como en el paper)
+        final_embeddings = torch.mean(torch.stack(all_embeddings, dim=0), dim=0)
+        
         final_user_emb, final_item_emb = torch.split(final_embeddings, [self.num_users, self.num_items])
         return final_user_emb, final_item_emb
 
-    def bpr_loss(self, users, pos_items, neg_items):
-        final_user_emb, final_item_emb = self.forward()
-        user_emb = final_user_emb[users]
-        pos_item_emb = final_item_emb[pos_items]
-        neg_item_emb = final_item_emb[neg_items]
-        score_diff = torch.sum(user_emb * (pos_item_emb - neg_item_emb), dim=1)
-        loss = -torch.mean(torch.log(torch.sigmoid(score_diff) + 1e-9))
-        return loss
+    def bpr_loss(self, users_emb_initial, items_emb_initial, users_emb_final, items_emb_final, users, pos_items, neg_items):
+        """
+        Calcula la pérdida BPR + Regularización L2 manual (como en el notebook).
+        """
+        # 1. Pérdida de Ranking (usa embeddings FINALES)
+        user_emb = users_emb_final[users]
+        pos_item_emb = items_emb_final[pos_items]
+        neg_item_emb = items_emb_final[neg_items]
+        
+        pos_scores = torch.sum(user_emb * pos_item_emb, dim=1)
+        neg_scores = torch.sum(user_emb * neg_item_emb, dim=1)
+        
+        ranking_loss = torch.mean(F.softplus(neg_scores - pos_scores))
+
+        # 2. Pérdida de Regularización L2 (usa embeddings INICIALES)
+        user_emb_0 = users_emb_initial[users]
+        pos_item_emb_0 = items_emb_initial[pos_items]
+        neg_item_emb_0 = items_emb_initial[neg_items]
+        
+        reg_loss = (user_emb_0.norm(2).pow(2) +
+                    pos_item_emb_0.norm(2).pow(2) +
+                    neg_item_emb_0.norm(2).pow(2)) / float(len(users))
+        
+        return ranking_loss, reg_loss
+
 
 # --- 2. Dataset y Funciones Auxiliares ---
 class BPRDataset(Dataset):
     def __init__(self, train_df, num_items, user_interactions):
-        self.users = torch.from_numpy(train_df['user_idx'].values).long() # Usar from_numpy
-        self.pos_items = torch.from_numpy(train_df['item_idx'].values).long() # Usar from_numpy
+        self.users = torch.from_numpy(train_df['user_idx'].values).long()
+        self.pos_items = torch.from_numpy(train_df['item_idx'].values).long()
         self.num_items = num_items
         self.user_interactions = user_interactions
 
@@ -113,30 +140,35 @@ class BPRDataset(Dataset):
         user = self.users[idx].item()
         pos_item = self.pos_items[idx].item()
         user_seen_items = self.user_interactions.get(user, set())
-
         neg_item = random.randint(0, self.num_items - 1)
         while neg_item in user_seen_items:
              neg_item = random.randint(0, self.num_items - 1)
-
         return user, pos_item, neg_item
 
 def create_norm_adj_matrix(edge_index_np, num_users, num_items):
     """
-    Crea la matriz de adyacencia normalizada simétricamente para LightGCN.
-    Devuelve una matriz dispersa de SciPy (no un tensor de PyTorch).
+    Crea la matriz de adyacencia normalizada simétricamente (D^-1/2 * A * D^-1/2).
+    Devuelve una matriz dispersa de SciPy.
     """
     user_nodes = edge_index_np[0]
     item_nodes = edge_index_np[1]
+    
+    # Crear grafo bipartito
     rows = np.concatenate([user_nodes, item_nodes + num_users])
     cols = np.concatenate([item_nodes + num_users, user_nodes])
     data = np.ones(len(rows))
+    
     adj_matrix = sp.coo_matrix((data, (rows, cols)), shape=(num_users + num_items, num_users + num_items), dtype=np.float32)
+    
+    # Normalización
     row_sum = np.array(adj_matrix.sum(axis=1)).flatten()
     with np.errstate(divide='ignore'):
         d_inv_sqrt = np.power(row_sum, -0.5)
     d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
     d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    norm_adj_matrix = d_mat_inv_sqrt.dot(adj_matrix).dot(d_mat_inv_sqrt)
+    
+    norm_adj_matrix = d_mat_inv_sqrt.dot(adj_matrix).dot(d_mat_inv_sqrt).tocoo()
+    
     print("   Matriz de adyacencia normalizada creada (formato SciPy COO).")
     return norm_adj_matrix
 
@@ -144,9 +176,9 @@ def create_norm_adj_matrix(edge_index_np, num_users, num_items):
 def preprocess_data(data_path):
     """
     Preprocesa datos para LightGCN.
-    AHORA DEVUELVE LOS MAPAS.
+    ¡CORREGIDO! Binariza los datos (>= 4.0) y crea la matriz dispersa.
     """
-    print(f"1. Preprocesando datos para LightGCN desde: {data_path}")
+    print(f"1. Preprocesando datos para LightGCN (Implementación Corregida) desde: {data_path}")
     train_file = os.path.join(data_path, 'train.csv')
     antitest_file = os.path.join(data_path, 'antitest.csv')
     train_df = pd.read_csv(train_file)
@@ -161,20 +193,27 @@ def preprocess_data(data_path):
     print(f"   Usuarios únicos totales (train+antitest): {num_users}")
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
-    # Mapear train_df
-    train_df['user_idx'] = train_df['userId'].map(user_map)
-    train_df['item_idx'] = train_df['movieId'].map(item_map)
-    train_df = train_df.dropna(subset=['user_idx', 'item_idx'])
-    train_df['user_idx'] = train_df['user_idx'].astype(int)
-    train_df['item_idx'] = train_df['item_idx'].astype(int)
+    # <<<<<<< CORRECCIÓN CRÍTICA: Binarizar/Filtrar train_df >>>>>>>
+    print("   Aplicando regla de binarización: rating >= 4.0 --> 1 (Feedback Positivo)")
+    train_positive = train_df[train_df['rating'] >= 4.0].copy()
+    
+    # Mapear train_positive
+    train_positive['user_idx'] = train_positive['userId'].map(user_map)
+    train_positive['item_idx'] = train_positive['movieId'].map(item_map)
+    train_positive = train_positive.dropna(subset=['user_idx', 'item_idx'])
+    train_positive['user_idx'] = train_positive['user_idx'].astype(int)
+    train_positive['item_idx'] = train_positive['item_idx'].astype(int)
+    print(f"   Interacciones positivas (>=4) a usar para grafo: {len(train_positive)}")
 
-    # Crear interacciones y edge_index
-    user_interactions = train_df.groupby('user_idx')['item_idx'].apply(set).to_dict()
-    edge_index_np = np.vstack([train_df['user_idx'].values, train_df['item_idx'].values])
+    # Crear interacciones y edge_index (basado en train_positive)
+    user_interactions = train_positive.groupby('user_idx')['item_idx'].apply(set).to_dict()
+    edge_index_np = np.vstack([train_positive['user_idx'].values, train_positive['item_idx'].values])
+    
+    # Crear la matriz de adyacencia normalizada (en formato SciPy)
     norm_adj_matrix_scipy = create_norm_adj_matrix(edge_index_np, num_users, num_items)
 
-    # Crear DataLoader
-    train_dataset = BPRDataset(train_df, num_items, user_interactions)
+    # Crear DataLoader (usa train_positive)
+    train_dataset = BPRDataset(train_positive, num_items, user_interactions)
     g = torch.Generator()
     g.manual_seed(RANDOM_SEED)
     train_loader = DataLoader(
@@ -187,71 +226,97 @@ def preprocess_data(data_path):
         'train_loader': train_loader,
         'num_users': num_users,
         'num_items': num_items,
-        'norm_adj_matrix': norm_adj_matrix_scipy
+        'norm_adj_matrix': norm_adj_matrix_scipy # Pasar la matriz SciPy
     }
-    prediction_components = {
+    prediction_components = { 
         'antitest_df': antitest_df,
-        # Mapas ya no se pasan aquí
+        'norm_adj_matrix': norm_adj_matrix_scipy # Pasar también para la predicción
     }
-
-    # <<<<<<< CAMBIO AQUÍ: Devolver mapas >>>>>>>
     return training_components, prediction_components, user_map, item_map
 
 def train_model(training_components):
     """
-    Entrena el modelo LightGCN.
+    Entrena el modelo LightGCN (Puro PyTorch) con BPR + L2 Manual.
     """
     set_seed(RANDOM_SEED)
-    print("2. Entrenando el modelo LightGCN...")
+    print("2. Entrenando el modelo LightGCN (Puro PyTorch Corregido)...")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo: {device}")
 
     train_loader = training_components['train_loader']
     num_users = training_components['num_users']
     num_items = training_components['num_items']
-    norm_adj_matrix_scipy = training_components['norm_adj_matrix']
+    norm_adj_matrix = training_components['norm_adj_matrix'] # Viene como SciPy
 
-    model = LightGCN(num_users, num_items, NUM_LAYERS, EMBEDDING_DIM, norm_adj_matrix_scipy).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    model = LightGCN(num_users, num_items, NUM_LAYERS, EMBEDDING_DIM, norm_adj_matrix).to(device)
+    
+    # <<<<<<< CORRECCIÓN CRÍTICA: weight_decay=0 >>>>>>>
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=0) 
 
     model.train()
     for epoch in range(EPOCHS):
         total_loss = 0
+        total_reg_loss = 0
         start_epoch_time = time.time()
+        
+        # Iterar sobre lotes de muestreo BPR
         for users, pos_items, neg_items in train_loader:
             users, pos_items, neg_items = users.to(device), pos_items.to(device), neg_items.to(device)
+            
             optimizer.zero_grad()
-            loss = model.bpr_loss(users, pos_items, neg_items)
+            
+            # Recalcular embeddings finales EN CADA LOTE
+            final_user_emb, final_item_emb = model.forward()
+            
+            # Obtener embeddings iniciales (capa 0)
+            initial_user_emb = model.user_embedding.weight
+            initial_item_emb = model.item_embedding.weight
+
+            # Calcular pérdidas
+            ranking_loss, reg_loss = model.bpr_loss(
+                initial_user_emb, initial_item_emb,
+                final_user_emb, final_item_emb,
+                users, pos_items, neg_items
+            )
+            
+            # Aplicar weight decay manualmente (como en el notebook)
+            loss = ranking_loss + reg_loss * WEIGHT_DECAY
+            
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+            total_reg_loss += reg_loss.item() 
+
         epoch_duration = time.time() - start_epoch_time
         avg_loss = total_loss / len(train_loader)
-        print(f"   Epoch {epoch+1}/{EPOCHS}, BPR Loss: {avg_loss:.4f} (Duración: {epoch_duration:.2f}s)")
+        avg_reg_loss = total_reg_loss / len(train_loader)
+        print(f"   Epoch {epoch+1}/{EPOCHS}, Loss Total: {avg_loss:.4f} (Rank: {avg_loss - avg_reg_loss * WEIGHT_DECAY:.4f}, Reg: {avg_reg_loss * WEIGHT_DECAY:.4f}) (Dur: {epoch_duration:.2f}s)")
 
     print("   Entrenamiento completado.")
     return model
 
-# <<<<<<< CAMBIO AQUÍ: Firma de la función >>>>>>>
 def generate_predictions(model, prediction_components):
-    """
-    Genera predicciones con LightGCN.
-    Ahora recibe componentes en un diccionario.
-    """
-    print("3. Generando predicciones con LightGCN...")
+    """Genera predicciones con el modelo LightGCN (Puro PyTorch) entrenado."""
+    print("3. Generando predicciones con LightGCN (Puro PyTorch Corregido)...")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo para predicción: {device}")
     model.to(device)
     model.eval()
 
-    # <<<<<<< CAMBIO AQUÍ: Desempaquetar componentes >>>>>>>
     antitest_df = prediction_components['antitest_df']
     user_map = prediction_components['user_map']
     item_map = prediction_components['item_map']
-
-    # --- Resto de la lógica sin cambios ---
+    
+    # El `edge_index` (norm_adj_matrix) está DENTRO del objeto `model`
+    
+    print("   Calculando embeddings finales...")
     with torch.no_grad():
-        final_user_emb, final_item_emb = model.forward()
+        final_user_emb, final_item_emb = model.forward() # Calcular embeddings finales una vez
+
+    # <<< DEBUG PRINT 1: Verificar embeddings finales >>>
+    print(f"   DEBUG: final_user_emb shape={final_user_emb.shape}, mean={final_user_emb.mean():.4f}, std={final_user_emb.std():.4f}, min={final_user_emb.min():.4f}, max={final_user_emb.max():.4f}")
+    print(f"   DEBUG: final_item_emb shape={final_item_emb.shape}, mean={final_item_emb.mean():.4f}, std={final_item_emb.std():.4f}, min={final_item_emb.min():.4f}, max={final_item_emb.max():.4f}")
+    # <<< FIN DEBUG PRINT 1 >>>
 
     antitest_mapped = antitest_df.copy()
     antitest_mapped['user_idx'] = antitest_mapped['userId'].map(user_map)
@@ -260,52 +325,97 @@ def generate_predictions(model, prediction_components):
     valid_antitest_mapped['user_idx'] = valid_antitest_mapped['user_idx'].astype(int)
     valid_antitest_mapped['item_idx'] = valid_antitest_mapped['item_idx'].astype(int)
 
-    # Obtener índices como tensores
+    # Convertir a tensores para indexar embeddings
     user_indices = torch.from_numpy(valid_antitest_mapped['user_idx'].values).long().to(device)
     item_indices = torch.from_numpy(valid_antitest_mapped['item_idx'].values).long().to(device)
 
-    # Seleccionar embeddings
-    user_emb_batch = final_user_emb[user_indices]
-    item_emb_batch = final_item_emb[item_indices]
+    # Asegurar índices válidos
+    num_users_model = final_user_emb.shape[0]
+    num_items_model = final_item_emb.shape[0]
+    user_mask = user_indices < num_users_model
+    item_mask = item_indices < num_items_model
+    valid_mask = user_mask & item_mask
 
-    # Calcular predicciones
-    predictions = torch.sum(user_emb_batch * item_emb_batch, dim=1)
+    original_count = len(valid_antitest_mapped) # Contar antes de filtrar
+    if not valid_mask.all():
+         removed_count = torch.sum(~valid_mask).item()
+         print(f"   Advertencia: Se descartaron {removed_count} pares con índices fuera de rango.")
+         user_indices = user_indices[valid_mask]
+         item_indices = item_indices[valid_mask]
+         valid_antitest_mapped = valid_antitest_mapped[valid_mask.cpu().numpy()] # Filtrar DF también
+    else:
+        removed_count = 0
 
-    # Crear DataFrame final
-    predictions_df = valid_antitest_mapped.copy()
-    predictions_df['prediction'] = predictions.cpu().numpy()
+    # <<< DEBUG PRINT 2: Verificar embeddings del lote (después de filtrar índices) >>>
+    if len(user_indices) > 0 and len(item_indices) > 0: # Solo si quedan índices válidos
+        user_emb_batch = final_user_emb[user_indices]
+        item_emb_batch = final_item_emb[item_indices]
+        print(f"   DEBUG: user_emb_batch shape={user_emb_batch.shape}, mean={user_emb_batch.mean():.4f}, std={user_emb_batch.std():.4f}")
+        print(f"   DEBUG: item_emb_batch shape={item_emb_batch.shape}, mean={item_emb_batch.mean():.4f}, std={item_emb_batch.std():.4f}")
+    else:
+        print("   DEBUG: No quedan índices válidos después del filtrado, no se pueden calcular embeddings de lote.")
+        user_emb_batch, item_emb_batch = None, None # Marcar como None
+    # <<< FIN DEBUG PRINT 2 >>>
 
-    print(f"   Se generaron {len(predictions_df)} predicciones.")
+
+    # Calcular predicciones solo si hay embeddings válidos
+    if user_emb_batch is not None and item_emb_batch is not None:
+        
+        # <<<<<<< CAMBIO CRÍTICO: Forzar cálculo de predicción en CPU >>>>>>>
+        print("   DEBUG: Moviendo lotes de embeddings a CPU para cálculo de producto punto.")
+        user_emb_batch_cpu = user_emb_batch.to('cpu')
+        item_emb_batch_cpu = item_emb_batch.to('cpu')
+        
+        # Calcular predicciones en CPU
+        predictions = torch.einsum("bd,bd->b", user_emb_batch_cpu, item_emb_batch_cpu)
+        # predictions = torch.sum(user_emb_batch_cpu * item_emb_batch_cpu, dim=1) # Alternativa
+
+        # <<< DEBUG PRINT 3: Verificar predicciones (Tensor PyTorch, ahora en CPU) >>>
+        print(f"   DEBUG: predictions tensor (primeros 10): {predictions[:10]}")
+        # <<< FIN DEBUG PRINT 3 >>>
+
+        # Crear DataFrame final
+        predictions_df = valid_antitest_mapped.copy() # Usar el DF ya filtrado por valid_mask
+        predictions_np = predictions.cpu().numpy() # .cpu() aquí es redundante pero no daña
+
+        # <<< DEBUG PRINT 4: Verificar predicciones (Array NumPy) >>>
+        print(f"   DEBUG: predictions numpy array (primeros 10): {predictions_np[:10]}")
+        # <<< FIN DEBUG PRINT 4 >>>
+
+        predictions_df['prediction'] = predictions_np
+        print(f"   Se generaron {len(predictions_df)} predicciones válidas.")
+
+    else: # Si no hubo embeddings válidos
+        print("   No se generaron predicciones debido a índices inválidos.")
+        # Devolver DF vacío pero con columnas correctas
+        predictions_df = pd.DataFrame(columns=['userId', 'movieId', 'prediction'])
+
+
+    # Siempre devolver las columnas esperadas, aunque esté vacío
     return predictions_df[['userId', 'movieId', 'prediction']]
 
-# Bloque if __name__ == "__main__" (ajustado para reflejar cambios)
+
+# Bloque if __name__ == "__main__"
+# ... (sin cambios) ...
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Uso: python lightgcn_model.py <dataset_percentage>")
         sys.exit(1)
 
     dataset_percentage = sys.argv[1]
-    # Asume que se corre desde el directorio raíz del proyecto
-    DATA_PATH = os.path.join('data', dataset_percentage) # Ajustar ruta relativa si es necesario
+    DATA_PATH = os.path.join('data', dataset_percentage)
 
     if not os.path.exists(DATA_PATH):
         print(f"Error: El directorio de datos no existe en '{DATA_PATH}'")
         sys.exit(1)
 
     try:
-        # 1. Preprocesar datos
-        # Desempaquetar los 4 valores ahora
         train_comps, pred_comps_dict, u_map, i_map = preprocess_data(DATA_PATH)
-        # Añadir mapas al diccionario para generate_predictions si se corre individualmente
+        # Añadir mapas para la ejecución de prueba local
         pred_comps_dict['user_map'] = u_map
         pred_comps_dict['item_map'] = i_map
 
-
-        # 2. Entrenar el modelo
-        trained_model = train_model(train_comps) # train_comps es el diccionario para LightGCN
-
-        # 3. Generar predicciones
-        # Pasar el diccionario de componentes de predicción
+        trained_model = train_model(train_comps)
         predictions = generate_predictions(trained_model, pred_comps_dict)
 
         print("\n--- Proceso del modelo LightGCN finalizado ---")
