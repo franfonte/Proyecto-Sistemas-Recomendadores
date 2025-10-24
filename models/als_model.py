@@ -66,7 +66,7 @@ def preprocess_data(data_path):
         'user_map': user_map, # Pasar los mapas GLOBALES
         'item_map': item_map  # Pasar los mapas GLOBALES
     }
-    return training_data, prediction_components
+    return training_data, prediction_components, user_map, item_map
 
 def train_model(interactions_matrix_transposed):
     """

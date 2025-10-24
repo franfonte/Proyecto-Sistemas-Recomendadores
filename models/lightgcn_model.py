@@ -55,27 +55,21 @@ class LightGCN(nn.Module):
         self.user_embedding = nn.Embedding(num_users, embedding_dim)
         self.item_embedding = nn.Embedding(num_items, embedding_dim)
         # La inicialización se controla ahora con torch.manual_seed global
-        # nn.init.xavier_uniform_(self.user_embedding.weight)
-        # nn.init.xavier_uniform_(self.item_embedding.weight)
 
         # La conversión y coalesce se hacen al recibir la matriz
         if isinstance(norm_adj_matrix, torch.Tensor):
-             # Asegurarse de que el tensor sparse esté coalesced
              self.norm_adj_matrix = norm_adj_matrix.coalesce()
         else:
-             # Si viene de scipy, convertirla a tensor sparse de PyTorch y coalesced
              self.norm_adj_matrix = self.convert_sp_mat_to_sp_tensor(norm_adj_matrix).coalesce()
 
 
     # Helper function para convertir matriz dispersa de SciPy a Tensor disperso de PyTorch
     def convert_sp_mat_to_sp_tensor(self, X):
         coo = X.tocoo().astype(np.float32)
-        # Usar torch.from_numpy para evitar copia innecesaria si es posible
         row = torch.from_numpy(coo.row).long()
         col = torch.from_numpy(coo.col).long()
         index = torch.stack([row, col])
         data = torch.from_numpy(coo.data).float()
-        # Usar la función moderna recomendada
         return torch.sparse_coo_tensor(index, data, torch.Size(coo.shape))
 
     def forward(self):
@@ -85,12 +79,9 @@ class LightGCN(nn.Module):
         device = initial_embeddings.device
 
         for _ in range(self.num_layers):
-            # Forzar CPU para la multiplicación dispersa si MPS no la soporta
             cpu_embeddings = current_embeddings.to('cpu')
-            # Asegurarse de que la matriz esté en CPU también
             norm_adj_matrix_cpu = self.norm_adj_matrix.to('cpu')
             propagated_embeddings = torch.sparse.mm(norm_adj_matrix_cpu, cpu_embeddings)
-            # Mover resultado de vuelta al dispositivo original
             current_embeddings = propagated_embeddings.to(device)
             all_layer_embeddings.append(current_embeddings)
 
@@ -110,10 +101,10 @@ class LightGCN(nn.Module):
 # --- 2. Dataset y Funciones Auxiliares ---
 class BPRDataset(Dataset):
     def __init__(self, train_df, num_items, user_interactions):
-        self.users = torch.tensor(train_df['user_idx'].values, dtype=torch.long)
-        self.pos_items = torch.tensor(train_df['item_idx'].values, dtype=torch.long)
+        self.users = torch.from_numpy(train_df['user_idx'].values).long() # Usar from_numpy
+        self.pos_items = torch.from_numpy(train_df['item_idx'].values).long() # Usar from_numpy
         self.num_items = num_items
-        self.user_interactions = user_interactions # Diccionario {user_idx: {item_idx1, item_idx2, ...}}
+        self.user_interactions = user_interactions
 
     def __len__(self):
         return len(self.users)
@@ -123,11 +114,7 @@ class BPRDataset(Dataset):
         pos_item = self.pos_items[idx].item()
         user_seen_items = self.user_interactions.get(user, set())
 
-        # El muestreo negativo ahora será determinista gracias a seed_worker y el generador del DataLoader
         neg_item = random.randint(0, self.num_items - 1)
-        # Bucle para asegurar que sea un ítem no visto
-        # En teoría, con suficientes items, esto no debería tardar mucho
-        # Considerar muestreo más eficiente si num_items es muy grande comparado con items vistos
         while neg_item in user_seen_items:
              neg_item = random.randint(0, self.num_items - 1)
 
@@ -155,12 +142,17 @@ def create_norm_adj_matrix(edge_index_np, num_users, num_items):
 
 # --- 3. Funciones para la Integración con run_experiment.py ---
 def preprocess_data(data_path):
+    """
+    Preprocesa datos para LightGCN.
+    AHORA DEVUELVE LOS MAPAS.
+    """
     print(f"1. Preprocesando datos para LightGCN desde: {data_path}")
     train_file = os.path.join(data_path, 'train.csv')
     antitest_file = os.path.join(data_path, 'antitest.csv')
     train_df = pd.read_csv(train_file)
     antitest_df = pd.read_csv(antitest_file)
 
+    # Mapas globales
     all_users = pd.concat([train_df['userId'], antitest_df['userId']]).unique()
     all_items = pd.concat([train_df['movieId'], antitest_df['movieId']]).unique()
     user_map = {uid: i for i, uid in enumerate(all_users)}
@@ -169,29 +161,28 @@ def preprocess_data(data_path):
     print(f"   Usuarios únicos totales (train+antitest): {num_users}")
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
+    # Mapear train_df
     train_df['user_idx'] = train_df['userId'].map(user_map)
     train_df['item_idx'] = train_df['movieId'].map(item_map)
     train_df = train_df.dropna(subset=['user_idx', 'item_idx'])
     train_df['user_idx'] = train_df['user_idx'].astype(int)
     train_df['item_idx'] = train_df['item_idx'].astype(int)
 
+    # Crear interacciones y edge_index
     user_interactions = train_df.groupby('user_idx')['item_idx'].apply(set).to_dict()
     edge_index_np = np.vstack([train_df['user_idx'].values, train_df['item_idx'].values])
     norm_adj_matrix_scipy = create_norm_adj_matrix(edge_index_np, num_users, num_items)
 
+    # Crear DataLoader
     train_dataset = BPRDataset(train_df, num_items, user_interactions)
-    # <<<<<<< CAMBIO AQUÍ: Añadido worker_init_fn y generator >>>>>>>
     g = torch.Generator()
     g.manual_seed(RANDOM_SEED)
     train_loader = DataLoader(
-        train_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        num_workers=0, # Fijar a 0 para máxima replicabilidad inicial
-        worker_init_fn=seed_worker,
-        generator=g
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True,
+        num_workers=0, worker_init_fn=seed_worker, generator=g
     )
 
+    # Agrupar componentes
     training_components = {
         'train_loader': train_loader,
         'num_users': num_users,
@@ -200,18 +191,17 @@ def preprocess_data(data_path):
     }
     prediction_components = {
         'antitest_df': antitest_df,
-        'user_map': user_map,
-        'item_map': item_map
+        # Mapas ya no se pasan aquí
     }
-    return training_components, prediction_components
+
+    # <<<<<<< CAMBIO AQUÍ: Devolver mapas >>>>>>>
+    return training_components, prediction_components, user_map, item_map
 
 def train_model(training_components):
     """
     Entrena el modelo LightGCN.
     """
-    # <<<<<<< CAMBIO AQUÍ: Fijar semillas al inicio >>>>>>>
     set_seed(RANDOM_SEED)
-
     print("2. Entrenando el modelo LightGCN...")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo: {device}")
@@ -228,7 +218,6 @@ def train_model(training_components):
     for epoch in range(EPOCHS):
         total_loss = 0
         start_epoch_time = time.time()
-
         for users, pos_items, neg_items in train_loader:
             users, pos_items, neg_items = users.to(device), pos_items.to(device), neg_items.to(device)
             optimizer.zero_grad()
@@ -236,7 +225,6 @@ def train_model(training_components):
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-
         epoch_duration = time.time() - start_epoch_time
         avg_loss = total_loss / len(train_loader)
         print(f"   Epoch {epoch+1}/{EPOCHS}, BPR Loss: {avg_loss:.4f} (Duración: {epoch_duration:.2f}s)")
@@ -244,17 +232,24 @@ def train_model(training_components):
     print("   Entrenamiento completado.")
     return model
 
+# <<<<<<< CAMBIO AQUÍ: Firma de la función >>>>>>>
 def generate_predictions(model, prediction_components):
+    """
+    Genera predicciones con LightGCN.
+    Ahora recibe componentes en un diccionario.
+    """
     print("3. Generando predicciones con LightGCN...")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo para predicción: {device}")
     model.to(device)
     model.eval()
 
+    # <<<<<<< CAMBIO AQUÍ: Desempaquetar componentes >>>>>>>
     antitest_df = prediction_components['antitest_df']
     user_map = prediction_components['user_map']
     item_map = prediction_components['item_map']
 
+    # --- Resto de la lógica sin cambios ---
     with torch.no_grad():
         final_user_emb, final_item_emb = model.forward()
 
@@ -265,18 +260,64 @@ def generate_predictions(model, prediction_components):
     valid_antitest_mapped['user_idx'] = valid_antitest_mapped['user_idx'].astype(int)
     valid_antitest_mapped['item_idx'] = valid_antitest_mapped['item_idx'].astype(int)
 
-    # Convertir a tensores para indexar embeddings
-    # Usar torch.from_numpy puede ser marginalmente más rápido si no hay copia
+    # Obtener índices como tensores
     user_indices = torch.from_numpy(valid_antitest_mapped['user_idx'].values).long().to(device)
     item_indices = torch.from_numpy(valid_antitest_mapped['item_idx'].values).long().to(device)
 
+    # Seleccionar embeddings
     user_emb_batch = final_user_emb[user_indices]
     item_emb_batch = final_item_emb[item_indices]
 
+    # Calcular predicciones
     predictions = torch.sum(user_emb_batch * item_emb_batch, dim=1)
 
+    # Crear DataFrame final
     predictions_df = valid_antitest_mapped.copy()
     predictions_df['prediction'] = predictions.cpu().numpy()
 
     print(f"   Se generaron {len(predictions_df)} predicciones.")
     return predictions_df[['userId', 'movieId', 'prediction']]
+
+# Bloque if __name__ == "__main__" (ajustado para reflejar cambios)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Uso: python lightgcn_model.py <dataset_percentage>")
+        sys.exit(1)
+
+    dataset_percentage = sys.argv[1]
+    # Asume que se corre desde el directorio raíz del proyecto
+    DATA_PATH = os.path.join('data', dataset_percentage) # Ajustar ruta relativa si es necesario
+
+    if not os.path.exists(DATA_PATH):
+        print(f"Error: El directorio de datos no existe en '{DATA_PATH}'")
+        sys.exit(1)
+
+    try:
+        # 1. Preprocesar datos
+        # Desempaquetar los 4 valores ahora
+        train_comps, pred_comps_dict, u_map, i_map = preprocess_data(DATA_PATH)
+        # Añadir mapas al diccionario para generate_predictions si se corre individualmente
+        pred_comps_dict['user_map'] = u_map
+        pred_comps_dict['item_map'] = i_map
+
+
+        # 2. Entrenar el modelo
+        trained_model = train_model(train_comps) # train_comps es el diccionario para LightGCN
+
+        # 3. Generar predicciones
+        # Pasar el diccionario de componentes de predicción
+        predictions = generate_predictions(trained_model, pred_comps_dict)
+
+        print("\n--- Proceso del modelo LightGCN finalizado ---")
+        if predictions is not None and not predictions.empty:
+             print("Ejemplo de 5 predicciones:")
+             print(predictions.head())
+        else:
+             print("No se generaron predicciones.")
+
+    except FileNotFoundError:
+        print(f"Error: No se encontraron los archivos train.csv o antitest.csv en '{DATA_PATH}'")
+    except Exception as e:
+        print(f"Ocurrió un error inesperado: {e}")
+        import traceback
+        traceback.print_exc()

@@ -8,14 +8,14 @@
                 "rmse": 3.729691243696503
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.0006006378299878487,
-                "duration_seconds": 5.847528458005399,
-                "energy_consumed_kWh": 2.0632463338560926e-06
+                "co2_emissions_g": 0.0006866795719777039,
+                "duration_seconds": 6.182332249998581,
+                "energy_consumed_kWh": 2.358807651934829e-06
             },
             "training_footprint": {
-                "co2_emissions_g": 0.00022126614250430677,
-                "duration_seconds": 4.282977541995933,
-                "energy_consumed_kWh": 7.600696035708016e-07
+                "co2_emissions_g": 0.0002347455185438505,
+                "duration_seconds": 4.339601457992103,
+                "energy_consumed_kWh": 8.063725032679767e-07
             }
         },
         "item_knn_model": {
@@ -26,32 +26,32 @@
                 "rmse": 1.097046398129907
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.067273197339715,
-                "duration_seconds": 139.03877525001008,
-                "energy_consumed_kWh": 0.00023108963646321186
+                "co2_emissions_g": 0.058961070434524185,
+                "duration_seconds": 138.67623758300033,
+                "energy_consumed_kWh": 0.000202536714040679
             },
             "training_footprint": {
-                "co2_emissions_g": 4.790271976770544e-05,
-                "duration_seconds": 3.621914375005872,
-                "energy_consumed_kWh": 1.6455025975379128e-07
+                "co2_emissions_g": 4.466069769737411e-05,
+                "duration_seconds": 3.60446166699694,
+                "energy_consumed_kWh": 1.5341361497897416e-07
             }
         },
         "lightfm_model": {
             "performance_metrics": {
-                "ndcg_at_10": 0.025259269933497835,
-                "precision_at_10": 0.009936055090998526,
-                "recall_at_10": 0.043799307485977435,
-                "rmse": 4.969491363772934
+                "ndcg_at_10": 0.024689639306647533,
+                "precision_at_10": 0.010108214461387115,
+                "recall_at_10": 0.043388485933370344,
+                "rmse": 4.969130210744452
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.000410713255162982,
-                "duration_seconds": 4.989643374996376,
-                "energy_consumed_kWh": 1.4108379054284143e-06
+                "co2_emissions_g": 0.00045496899338220303,
+                "duration_seconds": 5.274319792006281,
+                "energy_consumed_kWh": 1.562860447256574e-06
             },
             "training_footprint": {
-                "co2_emissions_g": 0.00010808582400403291,
-                "duration_seconds": 3.772312916989904,
-                "energy_consumed_kWh": 3.712847725935733e-07
+                "co2_emissions_g": 8.608017184864986e-05,
+                "duration_seconds": 3.7672600419900846,
+                "energy_consumed_kWh": 2.9569332818750744e-07
             }
         },
         "lightgcn_model": {
@@ -62,14 +62,14 @@
                 "rmse": 3.7638298288270775
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.0010368660038448704,
-                "duration_seconds": 6.867844166990835,
-                "energy_consumed_kWh": 3.5617303378580494e-06
+                "co2_emissions_g": 0.0007807743349923564,
+                "duration_seconds": 6.663287792005576,
+                "energy_consumed_kWh": 2.6820318398434846e-06
             },
             "training_footprint": {
-                "co2_emissions_g": 0.054732627464935804,
-                "duration_seconds": 109.16128100000788,
-                "energy_consumed_kWh": 0.00018801162251406086
+                "co2_emissions_g": 0.04196961392868753,
+                "duration_seconds": 100.05685712498962,
+                "energy_consumed_kWh": 0.00014416949407511012
             }
         },
         "most_popular_model": {
@@ -77,17 +77,17 @@
                 "ndcg_at_10": 0.0002091073498262046,
                 "precision_at_10": 0.00012297097884899163,
                 "recall_at_10": 0.0003998827094223639,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
-                "co2_emissions_g": 7.431598937384707e-05,
-                "duration_seconds": 3.686054666992277,
-                "energy_consumed_kWh": 2.552822765518787e-07
+                "co2_emissions_g": 4.807695602832732e-05,
+                "duration_seconds": 3.6388268750015413,
+                "energy_consumed_kWh": 1.65148777376233e-07
             },
             "training_footprint": {
-                "co2_emissions_g": 3.844798578235296e-06,
-                "duration_seconds": 3.485536583000794,
-                "energy_consumed_kWh": 1.3207237664533346e-08
+                "co2_emissions_g": 3.7449952675877227e-06,
+                "duration_seconds": 3.439943957986543,
+                "energy_consumed_kWh": 1.2864404089091599e-08
             }
         },
         "multivae_model": {
@@ -98,32 +98,32 @@
                 "rmse": 12.767575272219586
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.036125768584293325,
-                "duration_seconds": 75.25136133300839,
-                "energy_consumed_kWh": 0.0001240953464266224
+                "co2_emissions_g": 0.039674958099080136,
+                "duration_seconds": 75.739647082999,
+                "energy_consumed_kWh": 0.00013628713969860546
             },
             "training_footprint": {
-                "co2_emissions_g": 0.002648118084068358,
-                "duration_seconds": 13.729979875002755,
-                "energy_consumed_kWh": 9.096529815117696e-06
+                "co2_emissions_g": 0.00316117490395494,
+                "duration_seconds": 13.527939249994233,
+                "energy_consumed_kWh": 1.0858927302988667e-05
             }
         },
         "ncf_model": {
             "performance_metrics": {
-                "ndcg_at_10": 0.011630837686688099,
-                "precision_at_10": 0.005017215937038859,
-                "recall_at_10": 0.017576375160610284,
-                "rmse": 1.0129967501929027
+                "ndcg_at_10": 0.01140587638083778,
+                "precision_at_10": 0.004697491392031481,
+                "recall_at_10": 0.01762949206274052,
+                "rmse": 1.0379106966937035
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.0485870895225846,
-                "duration_seconds": 122.14560870800051,
-                "energy_consumed_kWh": 0.0001669011329709927
+                "co2_emissions_g": 0.05456569759136481,
+                "duration_seconds": 123.6262211669964,
+                "energy_consumed_kWh": 0.00018743820300489778
             },
             "training_footprint": {
-                "co2_emissions_g": 0.009903279176864196,
-                "duration_seconds": 24.20500100000936,
-                "energy_consumed_kWh": 3.401867720391805e-05
+                "co2_emissions_g": 0.008488657833150134,
+                "duration_seconds": 24.159936374999234,
+                "energy_consumed_kWh": 2.915932243888158e-05
             }
         },
         "random_model": {
@@ -131,17 +131,17 @@
                 "ndcg_at_10": 0.0025102053882457807,
                 "precision_at_10": 0.0010575504181013283,
                 "recall_at_10": 0.0036726001494816053,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
-                "co2_emissions_g": 4.312954333946481e-05,
-                "duration_seconds": 3.643868166996981,
-                "energy_consumed_kWh": 1.4815395856407929e-07
+                "co2_emissions_g": 4.290672161860721e-05,
+                "duration_seconds": 3.621060750010656,
+                "energy_consumed_kWh": 1.4738854540541717e-07
             },
             "training_footprint": {
-                "co2_emissions_g": 3.320879154949841e-07,
-                "duration_seconds": 3.483851249999134,
-                "energy_consumed_kWh": 1.1407526132291726e-09
+                "co2_emissions_g": 1.5112007276078254e-07,
+                "duration_seconds": 3.466690916000516,
+                "energy_consumed_kWh": 5.191113854784312e-10
             }
         },
         "svd_model": {
@@ -152,14 +152,14 @@
                 "rmse": 0.9444107534000626
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.02574149139439917,
-                "duration_seconds": 57.14876500000537,
-                "energy_consumed_kWh": 8.842439669269037e-05
+                "co2_emissions_g": 0.029624655829684546,
+                "duration_seconds": 58.30472791600914,
+                "energy_consumed_kWh": 0.00010176342461410017
             },
             "training_footprint": {
-                "co2_emissions_g": 8.73357536448969e-05,
-                "duration_seconds": 3.8018145419919165,
-                "energy_consumed_kWh": 3.0000636744115477e-07
+                "co2_emissions_g": 0.00018509924306187134,
+                "duration_seconds": 3.78955912499805,
+                "energy_consumed_kWh": 6.35832968853577e-07
             }
         },
         "user_knn_model": {
@@ -170,14 +170,14 @@
                 "rmse": 1.0273659379013182
             },
             "prediction_footprint": {
-                "co2_emissions_g": 0.09632491731915085,
-                "duration_seconds": 205.58750129200052,
-                "energy_consumed_kWh": 0.0003308849735983994
+                "co2_emissions_g": 0.09589605973083547,
+                "duration_seconds": 205.73130800000217,
+                "energy_consumed_kWh": 0.00032941180823541186
             },
             "training_footprint": {
-                "co2_emissions_g": 0.000119342292102488,
-                "duration_seconds": 3.8910904160002246,
-                "energy_consumed_kWh": 4.0995177852754083e-07
+                "co2_emissions_g": 9.997198384494661e-05,
+                "duration_seconds": 3.864267375000054,
+                "energy_consumed_kWh": 3.4341298342893176e-07
             }
         }
     },
@@ -223,7 +223,7 @@
                 "ndcg_at_10": 1.1084862548835373e-05,
                 "precision_at_10": 1.6730801405387318e-05,
                 "recall_at_10": 2.987643108104878e-06,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 6.947490931418805e-05,
@@ -259,7 +259,7 @@
                 "ndcg_at_10": 0.005667036618438018,
                 "precision_at_10": 0.005504433662372429,
                 "recall_at_10": 0.0025156786205544892,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 8.785727776422045e-05,
@@ -351,7 +351,7 @@
                 "ndcg_at_10": 4.845284599894231e-05,
                 "precision_at_10": 3.80952380952381e-05,
                 "recall_at_10": 2.587991718426501e-05,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 6.452178445141008e-05,
@@ -369,7 +369,7 @@
                 "ndcg_at_10": 0.002540745694286986,
                 "precision_at_10": 0.0016190476190476191,
                 "recall_at_10": 0.003155698101733651,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 5.3117284531505704e-05,
@@ -461,7 +461,7 @@
                 "ndcg_at_10": 9.412522908583065e-05,
                 "precision_at_10": 8.677542519958348e-05,
                 "recall_at_10": 7.107320540156361e-05,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 6.0495391994953596e-05,
@@ -479,7 +479,7 @@
                 "ndcg_at_10": 0.003553393900387492,
                 "precision_at_10": 0.002898299201666088,
                 "recall_at_10": 0.003062363795595342,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 5.807731369263808e-05,
@@ -571,7 +571,7 @@
                 "ndcg_at_10": 0.0,
                 "precision_at_10": 0.0,
                 "recall_at_10": 0.0,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 5.592863556237616e-05,
@@ -589,7 +589,7 @@
                 "ndcg_at_10": 0.004429232121016883,
                 "precision_at_10": 0.004130141604855023,
                 "recall_at_10": 0.002738116447567127,
-                "rmse": NaN
+                "rmse": null
             },
             "prediction_footprint": {
                 "co2_emissions_g": 6.305981917022844e-05,

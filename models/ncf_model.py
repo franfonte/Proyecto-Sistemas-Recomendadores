@@ -42,9 +42,11 @@ class MovieLensDataset(Dataset):
     Dataset personalizado de PyTorch para cargar los datos de ratings.
     """
     def __init__(self, users, items, ratings=None):
-        self.users = torch.tensor(users, dtype=torch.long)
-        self.items = torch.tensor(items, dtype=torch.long)
-        self.ratings = torch.tensor(ratings, dtype=torch.float) if ratings is not None else None
+        # Convertir a numpy antes de crear tensor para evitar warnings
+        self.users = torch.from_numpy(np.array(users)).long()
+        self.items = torch.from_numpy(np.array(items)).long()
+        self.ratings = torch.from_numpy(np.array(ratings)).float() if ratings is not None else None
+
 
     def __len__(self):
         return len(self.users)
@@ -60,7 +62,7 @@ class NCF(nn.Module):
     Implementación del modelo Neural Collaborative Filtering (NCF).
     Combina Generalized Matrix Factorization (GMF) y un Multi-Layer Perceptron (MLP).
     """
-    def __init__(self, num_users, num_items, embedding_dim, mlp_layers):
+    def __init__(self, num_users, num_items, embedding_dim=EMBEDDING_DIM, mlp_layers=MLP_LAYERS): # Añadir defaults
         super(NCF, self).__init__()
 
         # --- Capas de Embedding ---
@@ -71,54 +73,86 @@ class NCF(nn.Module):
 
         # --- Capas del MLP ---
         self.mlp_layers = nn.ModuleList()
-        input_size = embedding_dim * 2
+        mlp_input_size = embedding_dim * 2 # Renombrado para claridad
         for layer_size in mlp_layers:
-            self.mlp_layers.append(nn.Linear(input_size, layer_size))
-            input_size = layer_size
+            self.mlp_layers.append(nn.Linear(mlp_input_size, layer_size))
+            self.mlp_layers.append(nn.ReLU()) # Añadir activación ReLU después de cada capa lineal
+            mlp_input_size = layer_size
 
         # --- Capa de Predicción Final ---
-        predict_input_size = embedding_dim + mlp_layers[-1]
+        # Asegurarse de que el tamaño de entrada sea correcto (dimensión GMF + última capa MLP)
+        predict_input_size = embedding_dim + mlp_layers[-1] if mlp_layers else embedding_dim # Si no hay MLP, ¿solo GMF? revisar paper NCF
+        # Corrección: Si no hay MLP, la entrada debería ser GMF. Si sí hay MLP, es GMF + MLP output
+        if mlp_layers:
+             predict_input_size = embedding_dim + mlp_layers[-1]
+        else:
+             predict_input_size = embedding_dim # Solo GMF path si MLP está vacío
         self.predict_layer = nn.Linear(predict_input_size, 1)
+
 
         # Inicialización explícita controlada por la semilla global
         self._init_weights()
 
     def _init_weights(self):
-        nn.init.xavier_uniform_(self.gmf_user_embedding.weight)
-        nn.init.xavier_uniform_(self.gmf_item_embedding.weight)
-        nn.init.xavier_uniform_(self.mlp_user_embedding.weight)
-        nn.init.xavier_uniform_(self.mlp_item_embedding.weight)
+        # Usar inicialización normal con std pequeña, común en RecSys
+        stdv = 1. / np.sqrt(self.gmf_user_embedding.weight.size(1))
+        self.gmf_user_embedding.weight.data.uniform_(-stdv, stdv)
+        self.gmf_item_embedding.weight.data.uniform_(-stdv, stdv)
+        self.mlp_user_embedding.weight.data.uniform_(-stdv, stdv)
+        self.mlp_item_embedding.weight.data.uniform_(-stdv, stdv)
+
         for layer in self.mlp_layers:
             if isinstance(layer, nn.Linear):
-                nn.init.xavier_uniform_(layer.weight)
-                nn.init.zeros_(layer.bias) # Inicializar bias a cero es común
+                # Inicialización He para ReLU
+                nn.init.kaiming_uniform_(layer.weight, a=np.sqrt(5))
+                if layer.bias is not None:
+                     fan_in, _ = nn.init._calculate_fan_in_and_fan_out(layer.weight)
+                     if fan_in != 0: # Evitar división por cero
+                         bound = 1 / np.sqrt(fan_in)
+                         nn.init.uniform_(layer.bias, -bound, bound)
+                     else:
+                          nn.init.zeros_(layer.bias)
+
+
+        # Inicialización de la capa final
         nn.init.xavier_uniform_(self.predict_layer.weight)
-        nn.init.zeros_(self.predict_layer.bias)
+        if self.predict_layer.bias is not None:
+            nn.init.zeros_(self.predict_layer.bias)
 
 
     def forward(self, user_indices, item_indices):
         gmf_user_emb = self.gmf_user_embedding(user_indices)
         gmf_item_emb = self.gmf_item_embedding(item_indices)
-        gmf_output = gmf_user_emb * gmf_item_emb
+        gmf_output = gmf_user_emb * gmf_item_emb # Element-wise product
 
-        mlp_user_emb = self.mlp_user_embedding(user_indices)
-        mlp_item_emb = self.mlp_item_embedding(item_indices)
-        mlp_input = torch.cat([mlp_user_emb, mlp_item_emb], dim=-1)
+        # Solo calcular MLP path si hay capas MLP definidas
+        if self.mlp_layers:
+            mlp_user_emb = self.mlp_user_embedding(user_indices)
+            mlp_item_emb = self.mlp_item_embedding(item_indices)
+            mlp_input = torch.cat([mlp_user_emb, mlp_item_emb], dim=-1)
 
-        mlp_output = mlp_input
-        for layer in self.mlp_layers:
-            mlp_output = torch.relu(layer(mlp_output))
+            mlp_output = mlp_input
+            for layer in self.mlp_layers:
+                 mlp_output = layer(mlp_output) # Aplicar capa (lineal o ReLU)
 
-        concat_output = torch.cat([gmf_output, mlp_output], dim=-1)
+            # Concatenar GMF y MLP outputs
+            concat_output = torch.cat([gmf_output, mlp_output], dim=-1)
+        else:
+            # Si no hay MLP, la salida es solo GMF
+            concat_output = gmf_output
+
         prediction = self.predict_layer(concat_output)
 
-        return prediction.squeeze()
+        # Devolver tensor 1D
+        return prediction.view(-1)
+
 
 # --- 3. Funciones para la Integración con run_experiment.py ---
 def preprocess_data(data_path):
     """
     Carga y preprocesa los datos para el modelo NCF.
     Crea mapeos de IDs, y prepara DataLoaders de PyTorch.
+    AHORA DEVUELVE LOS MAPAS.
     """
     print(f"1. Preprocesando datos para NCF desde: {data_path}")
     train_file = os.path.join(data_path, 'train.csv')
@@ -127,43 +161,34 @@ def preprocess_data(data_path):
     train_df = pd.read_csv(train_file)
     antitest_df = pd.read_csv(antitest_file)
 
-    user_ids = pd.concat([train_df['userId'], antitest_df['userId']]).unique()
-    item_ids = pd.concat([train_df['movieId'], antitest_df['movieId']]).unique()
-
-    user_map = {uid: i for i, uid in enumerate(user_ids)}
-    item_map = {iid: i for i, iid in enumerate(item_ids)}
-
+    # Mapas globales
+    all_users = pd.concat([train_df['userId'], antitest_df['userId']]).unique()
+    all_items = pd.concat([train_df['movieId'], antitest_df['movieId']]).unique()
+    user_map = {uid: i for i, uid in enumerate(all_users)}
+    item_map = {iid: i for i, iid in enumerate(all_items)}
     num_users = len(user_map)
     num_items = len(item_map)
     print(f"   Usuarios únicos totales (train+antitest): {num_users}")
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
-
+    # Mapear train_df
     train_df['user_idx'] = train_df['userId'].map(user_map)
     train_df['item_idx'] = train_df['movieId'].map(item_map)
-    # Asegurar que no haya NaNs después del mapeo y convertir a int
     train_df = train_df.dropna(subset=['user_idx', 'item_idx'])
     train_df['user_idx'] = train_df['user_idx'].astype(int)
     train_df['item_idx'] = train_df['item_idx'].astype(int)
-
 
     dataset = MovieLensDataset(
         train_df['user_idx'].values,
         train_df['item_idx'].values,
         train_df['rating'].values
     )
-    # <<<<<<< CAMBIO AQUÍ: Añadido worker_init_fn y generator >>>>>>>
     g = torch.Generator()
     g.manual_seed(RANDOM_SEED)
     train_loader = DataLoader(
-        dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        num_workers=0, # Fijar a 0 para máxima replicabilidad inicial
-        worker_init_fn=seed_worker,
-        generator=g
+        dataset, batch_size=BATCH_SIZE, shuffle=True,
+        num_workers=0, worker_init_fn=seed_worker, generator=g
     )
-
     print("   DataLoaders y mapeos creados.")
 
     training_components = {
@@ -171,24 +196,21 @@ def preprocess_data(data_path):
         'num_users': num_users,
         'num_items': num_items
     }
-
     prediction_components = {
         'antitest_df': antitest_df,
-        'user_map': user_map,
-        'item_map': item_map
+        # 'user_map': user_map, # Ya no es necesario pasar mapas aquí
+        # 'item_map': item_map
     }
 
-    return training_components, prediction_components
+    # <<<<<<< CAMBIO AQUÍ: Devolver los mapas >>>>>>>
+    return training_components, prediction_components, user_map, item_map
 
 def train_model(training_components):
     """
-    Entrena el modelo NCF, usando la GPU (MPS) si está disponible.
+    Entrena el modelo NCF.
     """
-    # <<<<<<< CAMBIO AQUÍ: Fijar semillas al inicio >>>>>>>
     set_seed(RANDOM_SEED)
-
     print("2. Entrenando el modelo NCF...")
-
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo: {device}")
 
@@ -196,16 +218,16 @@ def train_model(training_components):
     num_users = training_components['num_users']
     num_items = training_components['num_items']
 
-    model = NCF(num_users, num_items, EMBEDDING_DIM, MLP_LAYERS).to(device)
+    model = NCF(num_users, num_items).to(device) # Usar hiperparams por defecto de la clase
     loss_function = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE) # Weight decay no es estándar en NCF original
 
     model.train()
     for epoch in range(EPOCHS):
         total_loss = 0
+        start_epoch_time = time.time() # Añadir medición de tiempo
         for users, items, ratings in train_loader:
             users, items, ratings = users.to(device), items.to(device), ratings.to(device)
-
             optimizer.zero_grad()
             predictions = model(users, items)
             loss = loss_function(predictions, ratings)
@@ -213,28 +235,31 @@ def train_model(training_components):
             optimizer.step()
             total_loss += loss.item()
 
-        print(f"   Epoch {epoch+1}/{EPOCHS}, Loss: {total_loss/len(train_loader):.4f}")
+        epoch_duration = time.time() - start_epoch_time
+        avg_loss = total_loss/len(train_loader)
+        print(f"   Epoch {epoch+1}/{EPOCHS}, Loss: {avg_loss:.4f} (Duración: {epoch_duration:.2f}s)")
 
     print("   Entrenamiento completado.")
     return model
 
 def generate_predictions(model, prediction_components):
     """
-    Genera predicciones, usando la GPU (MPS) si está disponible.
+    Genera predicciones.
+    Recibe componentes en un diccionario.
     """
     print("3. Generando predicciones con NCF...")
-
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"   Usando dispositivo para predicción: {device}")
 
+    # Desempaquetar componentes
     antitest_df = prediction_components['antitest_df']
-    user_map = prediction_components['user_map']
-    item_map = prediction_components['item_map']
+    user_map = prediction_components['user_map'] # Mapas vienen del runner
+    item_map = prediction_components['item_map'] # Mapas vienen del runner
 
+    # --- Lógica de predicción sin cambios ---
     antitest_mapped = antitest_df.copy()
     antitest_mapped['user_idx'] = antitest_mapped['userId'].map(user_map)
     antitest_mapped['item_idx'] = antitest_mapped['movieId'].map(item_map)
-
     valid_antitest_mapped = antitest_mapped.dropna(subset=['user_idx', 'item_idx']).copy()
     valid_antitest_mapped['user_idx'] = valid_antitest_mapped['user_idx'].astype(int)
     valid_antitest_mapped['item_idx'] = valid_antitest_mapped['item_idx'].astype(int)
@@ -243,37 +268,23 @@ def generate_predictions(model, prediction_components):
         valid_antitest_mapped['user_idx'].values,
         valid_antitest_mapped['item_idx'].values
     )
-    # Usar un batch size mayor en predicción es más eficiente
     pred_loader = DataLoader(pred_dataset, batch_size=BATCH_SIZE * 4, shuffle=False)
 
     model.to(device)
     model.eval()
-
     all_preds = []
-    total_batches = len(pred_loader)
-    start_time = time.time()
-
     with torch.no_grad():
-        for i, (users, items) in enumerate(pred_loader):
+        for users, items in pred_loader:
             users, items = users.to(device), items.to(device)
-
             predictions = model(users, items)
             all_preds.extend(predictions.cpu().numpy().tolist())
 
-            # Quitado el print de progreso para reducir output, ya que no es interactivo
-            # if (i + 1) % 100 == 0:
-            #     elapsed = time.time() - start_time
-            #     print(f"   Procesado lote {i+1}/{total_batches} ({elapsed:.2f}s transcurridos)")
-
     predictions_df = valid_antitest_mapped.copy()
-    # Asegurarse de que el número de predicciones coincida
     if len(all_preds) == len(predictions_df):
         predictions_df['prediction'] = all_preds
     else:
          print(f"   [Error] Mismatch en longitud de predicciones: {len(all_preds)} vs {len(predictions_df)}")
-         # Devolver DF sin columna 'prediction' en caso de error
-         return predictions_df[['userId', 'movieId']]
-
+         return predictions_df[['userId', 'movieId']] # Devolver sin prediction
 
     print(f"   Se generaron {len(predictions_df)} predicciones.")
     return predictions_df[['userId', 'movieId', 'prediction']]

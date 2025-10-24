@@ -177,7 +177,7 @@ def preprocess_data(data_path):
         'user_map': user_map,
         'item_map': item_map
     }
-    return training_components, prediction_components
+    return training_components, prediction_components, user_map, item_map
 
 def train_model(training_components):
     """
