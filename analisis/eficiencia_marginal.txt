@@ -1,0 +1,21 @@
+=== Eficiencia marginal (ganancia NDCG/kWh) ===
+als_model:   Mejor salto: 50%→75% | 6892.0135 NDCG/kWh
+als_model:   Peor salto: 25%→50% | -24062.6975 NDCG/kWh
+item_knn_model:   Mejor salto: 75%→100% | 66.8222 NDCG/kWh
+item_knn_model:   Peor salto: 10%→25% | -1.6044 NDCG/kWh
+lightfm_model:   Mejor salto: 75%→100% | 116712.8530 NDCG/kWh
+lightfm_model:   Peor salto: 50%→75% | 43023.3249 NDCG/kWh
+lightgcn_model:   Mejor salto: 10%→25% | 112.5665 NDCG/kWh
+lightgcn_model:   Peor salto: 50%→75% | 73.6567 NDCG/kWh
+most_popular_model:   Mejor salto: 10%→25% | 2703.4539 NDCG/kWh
+most_popular_model:   Peor salto: 25%→50% | -2411.7934 NDCG/kWh
+multivae_model:   Mejor salto: 50%→75% | 27034.3772 NDCG/kWh
+multivae_model:   Peor salto: 25%→50% | -188699.7720 NDCG/kWh
+ncf_model:   Mejor salto: 75%→100% | 265.5628 NDCG/kWh
+ncf_model:   Peor salto: 25%→50% | 25.0560 NDCG/kWh
+random_model:   Mejor salto: 25%→50% | 1651631.0716 NDCG/kWh
+random_model:   Peor salto: 75%→100% | -502134.7839 NDCG/kWh
+svd_model:   Mejor salto: 25%→50% | 900.1227 NDCG/kWh
+svd_model:   Peor salto: 50%→75% | -9504.3302 NDCG/kWh
+user_knn_model:   Mejor salto: 50%→75% | 0.0756 NDCG/kWh
+user_knn_model:   Peor salto: 10%→25% | -2.1337 NDCG/kWh

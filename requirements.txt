@@ -9,3 +9,6 @@ torch
 torch-geometric
 scipy
 implicit
+matplotlib
+seaborn
+plotly

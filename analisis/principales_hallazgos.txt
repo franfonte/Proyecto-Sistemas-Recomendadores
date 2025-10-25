@@ -1,0 +1,40 @@
+Modelo: als_model
+  Mayor mejora de NDCG@10: 122.09% (Δ 0.0058) al pasar de 25% a 50%
+  Costo energético total asociado: -6.22% (Δ -0.000000 kWh)
+  Último salto≥50%: NDCG 46.83% (Δ 0.0066) | energía 61.73% (Δ 0.000003 kWh)
+Modelo: item_knn_model
+  Mayor mejora de NDCG@10: 2959.02% (Δ 0.0080) al pasar de 50% a 75%
+  Costo energético total asociado: 31.84% (Δ 0.000269 kWh)
+  Último salto≥50%: NDCG 230.29% (Δ 0.0191) | energía 25.65% (Δ 0.000286 kWh)
+Modelo: lightfm_model
+  Mayor mejora de NDCG@10: 100.04% (Δ 0.0247) al pasar de 10% a 25%
+  Costo energético total asociado: 18.81% (Δ 0.000000 kWh)
+  Último salto≥50%: NDCG 78.85% (Δ 0.1276) | energía 22.26% (Δ 0.000001 kWh)
+Modelo: lightgcn_model
+  Mayor mejora de NDCG@10: 96.37% (Δ 0.0487) al pasar de 25% a 50%
+  Costo energético total asociado: 169.99% (Δ 0.000543 kWh)
+  Último salto≥50%: NDCG 75.91% (Δ 0.1225) | energía 75.29% (Δ 0.001284 kWh)
+Modelo: most_popular_model
+  Mayor mejora de NDCG@10: inf% (Δ 0.0000) al pasar de 75% a 100%
+  Costo energético total asociado: -24.89% (Δ -0.000000 kWh)
+  Último salto≥50%: NDCG inf% (Δ 0.0000) | energía -24.89% (Δ -0.000000 kWh)
+Modelo: multivae_model
+  Mayor mejora de NDCG@10: 129.85% (Δ 0.0605) al pasar de 25% a 50%
+  Costo energético total asociado: -0.20% (Δ -0.000000 kWh)
+  Último salto≥50%: NDCG 74.47% (Δ 0.1374) | energía 9.82% (Δ 0.000016 kWh)
+Modelo: ncf_model
+  Mayor mejora de NDCG@10: 41.95% (Δ 0.0065) al pasar de 50% a 75%
+  Costo energético total asociado: 31.70% (Δ 0.000096 kWh)
+  Último salto≥50%: NDCG 34.30% (Δ 0.0075) | energía 7.13% (Δ 0.000028 kWh)
+Modelo: random_model
+  Mayor mejora de NDCG@10: 64.52% (Δ 0.0015) al pasar de 25% a 50%
+  Costo energético total asociado: 0.62% (Δ 0.000000 kWh)
+  Último salto≥50%: NDCG 32.82% (Δ 0.0014) | energía -1.90% (Δ -0.000000 kWh)
+Modelo: svd_model
+  Mayor mejora de NDCG@10: 73.80% (Δ 0.0361) al pasar de 75% a 100%
+  Costo energético total asociado: -7.09% (Δ -0.000007 kWh)
+  Último salto≥50%: NDCG 73.80% (Δ 0.0361) | energía -7.09% (Δ -0.000007 kWh)
+Modelo: user_knn_model
+  Mayor mejora de NDCG@10: 54.80% (Δ 0.0000) al pasar de 50% a 75%
+  Costo energético total asociado: 38.99% (Δ 0.000532 kWh)
+  Último salto≥50%: NDCG -51.96% (Δ -0.0001) | energía 24.32% (Δ 0.000461 kWh)
