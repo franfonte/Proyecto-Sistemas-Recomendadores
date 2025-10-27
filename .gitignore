@@ -45,3 +45,4 @@ data/100
 trained_models/
 
 # Extras
+trained_models/10/multivae_model.pth
