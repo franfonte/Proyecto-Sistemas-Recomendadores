@@ -5,42 +5,37 @@ import json
 import pandas as pd
 import numpy as np
 import pickle
-import random
-import time
-from codecarbon import EmissionsTracker
+import random # Para fijar semilla en modelo Random
+import importlib 
 
-# Importaciones de librerías de modelos
+# Importaciones específicas de librerías
 import torch
+from torch.utils.data import DataLoader
 from surprise.dump import load as surprise_load
-from lightfm import LightFM
-import implicit
+from lightfm import LightFM # Necesario para cargar pickle
+import implicit # Necesario para cargar pickle de ALS
+from codecarbon import EmissionsTracker # Importar CodeCarbon
+from scipy.sparse import csr_matrix 
 
-# Importar Clases de Modelos PyTorch
+# Importar Clases de Modelos PyTorch (Necesario para cargar state_dict)
+# Asumimos que los scripts están en models/
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'models')))
 try:
     from ncf_model import NCF
     from lightgcn_model import LightGCN
     from multivae_model import MultiVAE
-    # Importar las funciones de preproceso para reconstruir dependencias
-    from lightgcn_model import create_norm_adj_matrix as lightgcn_create_matrix
-    from multivae_model import VAEInteractionDataset # Necesario para predicción
 except ImportError as e:
-    print(f"Error importando clases de modelos PyTorch: {e}")
-    # Definir placeholders para que el script no falle si faltan archivos
+    print(f"Advertencia: No se pudieron importar todas las clases de modelos PyTorch: {e}")
+    # Definir placeholders si no se importan para evitar NameError más tarde
     class NCF: pass
     class LightGCN: pass
     class MultiVAE: pass
 
+
 # --- Constante para Replicabilidad ---
 RANDOM_SEED = 42
-random.seed(RANDOM_SEED)
-np.random.seed(RANDOM_SEED)
-torch.manual_seed(RANDOM_SEED)
-if torch.backends.mps.is_available():
-    torch.mps.manual_seed(RANDOM_SEED)
 
-# --- Funciones de Carga (Similares a predict_single.py) ---
-
+# --- FUNCIÓN para cargar mapas JSON ---
 def load_maps_from_json(model_dir, model_name):
     """Carga user_map y item_map desde archivos JSON."""
     user_map_path = os.path.join(model_dir, f"{model_name}_user_map.json")
@@ -49,156 +44,348 @@ def load_maps_from_json(model_dir, model_name):
     try:
         with open(user_map_path, 'r') as f:
             user_map_str_keys = json.load(f)
+            # <<<<<<< CORRECCIÓN (Book-Crossings): UserID es int (después del mapeo) pero la clave JSON es string >>>>>>>
+            # El ID original puede ser string, pero el ID *mapeado* (el valor) es int.
+            # El ID original (clave) puede ser int o string.
+            # Asumimos que los UserIDs originales son numéricos, por lo que int(k) está bien.
             user_map = {int(k): v for k, v in user_map_str_keys.items()}
         with open(item_map_path, 'r') as f:
             item_map_str_keys = json.load(f)
-            item_map = {int(k): v for k, v in item_map_str_keys.items()}
+            # <<<<<<< CORRECCIÓN (Book-Crossings): MovieID/ISBN es string >>>>>>>
+            # No convertir las claves (k) a int, mantenerlas como strings
+            item_map = {k: v for k, v in item_map_str_keys.items()}
         print("   Mapas de ID cargados desde JSON.")
+    except FileNotFoundError:
+        print(f"   Advertencia: Archivos de mapa no encontrados para {model_name}.")
     except Exception as e:
-        print(f"   [ERROR] Falló al cargar mapas JSON para {model_name}: {e}")
+        print(f"   [ERROR] Falló al cargar mapas JSON: {e}")
     return user_map, item_map
 
+# --- Función Helper para guardar JSON (copiada de run_experiment_saves) ---
+def save_json_with_numpy(data, filepath):
+    """Guarda un diccionario (posiblemente con tipos numpy) como JSON."""
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, (np.integer, np.int64)):
+                return int(obj)
+            elif isinstance(obj, (np.floating, np.float32, np.float64)):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return super(NumpyEncoder, self).default(obj)
+
+    def convert_keys_to_string(obj):
+        if isinstance(obj, dict):
+            # Convertir claves numéricas a string para JSON
+            return {str(k) if isinstance(k, (int, np.integer, np.int64)) else k: convert_keys_to_string(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_keys_to_string(i) for i in obj]
+        return obj
+
+    data_to_save = convert_keys_to_string(data)
+    with open(filepath, 'w') as f:
+        json.dump(data_to_save, f, indent=4, cls=NumpyEncoder)
+    print(f"   Resultados individuales guardados en: {filepath}")
+
+# --- Funciones de Carga de Modelos ---
 def load_pytorch_model(model_class, state_dict_path, user_map, item_map, **kwargs):
     """Carga un modelo PyTorch."""
-    num_users = len(user_map)
-    num_items = len(item_map)
+    num_users = len(user_map) if user_map else 0
+    num_items = len(item_map) if item_map else 0
+    
     model_instance = None
     try:
         if model_class == MultiVAE:
-             model_instance = model_class(num_items=num_items, hidden_dim=600, latent_dim=200) # Hiperparams fijos
+             if not num_items:
+                  print("[ERROR] Se necesita num_items para instanciar MultiVAE.")
+                  return None
+             model_instance = model_class(
+                 num_items=num_items, 
+                 hidden_dim=kwargs.get('hidden_dim', 600), 
+                 latent_dim=kwargs.get('latent_dim', 200)
+             )
         elif model_class == NCF:
-             model_instance = model_class(num_users=num_users, num_items=num_items, embedding_dim=64, mlp_layers=[64, 32, 16]) # Hiperparams fijos
+              if not num_users or not num_items:
+                  print("[ERROR] Se necesita num_users y num_items para instanciar NCF.")
+                  return None
+              model_instance = model_class(
+                  num_users=num_users, 
+                  num_items=num_items, 
+                  embedding_dim=kwargs.get('embedding_dim', 64), 
+                  mlp_layers=kwargs.get('mlp_layers', [64, 32, 16])
+              )
         elif model_class == LightGCN:
-             # LightGCN necesita la matriz de adyacencia
-             norm_adj_matrix = kwargs.get('norm_adj_matrix')
-             if norm_adj_matrix is None:
-                 print("[ERROR] LightGCN necesita 'norm_adj_matrix' para ser instanciado.")
-                 return None
-             model_instance = model_class(num_users=num_users, num_items=num_items, num_layers=3, embedding_dim=64, norm_adj_matrix=norm_adj_matrix)
+             print("[ERROR] Carga individual para LightGCN no implementada.")
+             return None
         
         if model_instance:
             model_instance.load_state_dict(torch.load(state_dict_path, map_location=torch.device('cpu')))
             model_instance.eval()
             print(f"   Modelo {model_class.__name__} cargado correctamente.")
-            return model_instance
+    except FileNotFoundError:
+         print(f"[ERROR] Archivo state_dict no encontrado en: {state_dict_path}")
     except Exception as e:
         print(f"[ERROR] Falló al instanciar o cargar state_dict de {model_class.__name__}: {e}")
-    return None
+    return model_instance
 
-# (Otras funciones de carga de predict_single.py: load_surprise_model, load_pickle_model, load_most_popular)
 def load_surprise_model(model_path):
+    """Carga un modelo Surprise."""
     try:
         _, model = surprise_load(model_path)
         print("   Modelo Surprise cargado.")
         return model
-    except Exception as e:
-        print(f"[ERROR] Falló al cargar modelo Surprise: {e}")
-        return None
+    except Exception as e: print(f"[ERROR] Falló al cargar modelo Surprise: {e}")
+    return None
 
 def load_pickle_model(model_path, model_name):
+    """Carga un modelo guardado con Pickle (LightFM, ALS)."""
     try:
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
         print(f"   Modelo {model_name} (pickle) cargado.")
         return model
-    except Exception as e:
-        print(f"[ERROR] Falló al cargar modelo Pickle ({model_name}): {e}")
-        return None
+    except Exception as e: print(f"[ERROR] Falló al cargar modelo Pickle ({model_name}): {e}")
+    return None
 
 def load_most_popular(model_path):
+    """Carga el 'modelo' Most Popular (scores y promedio global)."""
     try:
         with open(model_path, 'r') as f:
             model_data = json.load(f)
-        popularity_scores = {int(k): v for k, v in model_data['popularity_scores'].items()}
-        global_average = model_data['global_average']
+        scores_dict = model_data.get('popularity_scores', {})
+        # <<<<<<< CORRECCIÓN (Book-Crossings): MovieID/ISBN es string >>>>>>>
+        # No convertir claves a int, mantenerlas como strings
+        popularity_scores = {k: v for k, v in scores_dict.items()}
+        global_average = model_data.get('global_average')
+        if global_average is None:
+             print(f"[ERROR] No se encontró 'global_average' en {model_path}")
+             return None, None
         print("   Modelo Most Popular cargado.")
         return pd.Series(popularity_scores), global_average
     except Exception as e:
         print(f"[ERROR] Falló al cargar modelo Most Popular: {e}")
-        return None, None
+    return None, None
 
-# --- Funciones de Predicción Individual (Adaptadas) ---
-
-# Reutilizar generate_predictions de los módulos de modelo es la mejor estrategia
-# Esta función adaptará la llamada
-def get_model_predictions_for_user(model_module, model, prediction_components_user):
+# --- Función Principal (Lógica de Predicción Individual) ---
+def get_single_top10(model_name, model, data_path, user_map, item_map, user_id):
     """
-    Wrapper para llamar a la función generate_predictions de cada modelo
-    con los datos filtrados para un solo usuario.
+    Función central para generar predicciones Top-10 para un usuario.
+    Esta función es la que será medida por CodeCarbon.
     """
-    # model_module es el módulo importado (ej. ncf_model)
-    # model es el objeto de modelo entrenado y cargado
-    # prediction_components_user es el dict con 'antitest_df' (filtrado), 'user_map', 'item_map', etc.
+    print(f"   Generando predicciones para usuario {user_id}...")
     
-    # La firma de generate_predictions es: (model, prediction_components)
-    return model_module.generate_predictions(model, prediction_components_user)
+    # 1. Obtener el índice del usuario
+    # <<<<<<< CAMBIO (Book-Crossings): user_id ahora es string, convertir a int para map >>>>>>>
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        print(f"   [INFO] User ID '{user_id}' no es un entero. No se puede predecir.")
+        return pd.DataFrame(), None
+        
+    user_idx = user_map.get(user_id_int) if user_map else user_id_int # Usar ID int si no hay mapa
+    if user_idx is None:
+        print("   [INFO] Usuario no encontrado en el mapa. No se puede predecir.")
+        return pd.DataFrame(), None # Devolver DF vacío y sin datos de emisión
 
-# --- Función de Guardado de Resultados ---
-
-def save_individual_results(filepath, dataset_percentage, model_name, user_id, top_10_movie_ids, footprint):
-    """
-    Carga y actualiza el JSON de resultados individuales.
-    """
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            try:
-                all_results = json.load(f)
-            except json.JSONDecodeError:
-                all_results = {}
-    else:
-        all_results = {}
-
-    dataset_key = str(dataset_percentage)
-    user_key = str(user_id) # Usar string para claves JSON
-
-    # Crear estructura anidada
-    if dataset_key not in all_results:
-        all_results[dataset_key] = {}
-    if model_name not in all_results[dataset_key]:
-        all_results[dataset_key][model_name] = {}
+    # 2. Obtener todos los IDs de ítems posibles
+    if item_map:
+        all_item_indices = list(item_map.values()) # Índices enteros
+        all_item_raw_ids = list(item_map.keys()) # IDs string (ISBNs)
+    else: # Para Surprise, necesitamos IDs raw
+        train_file = os.path.join(data_path, 'train.csv')
+        if not os.path.exists(train_file):
+            print(f"   [ERROR] No se encontró {train_file} para obtener la lista de ítems.")
+            return pd.DataFrame(), None
+        train_df = pd.read_csv(train_file)
+        all_item_raw_ids = train_df['movieId'].unique() # IDs pueden ser string o int
+        all_item_indices = all_item_raw_ids # En este caso, son lo mismo
+        
+    num_all_items = len(all_item_raw_ids)
     
-    # Datos a guardar
-    results_data = {
-        "top_10_recommendations": top_10_movie_ids,
-        "prediction_footprint": {
-            "co2_emissions_g": footprint * 1000 if isinstance(footprint, (int, float)) else None,
-            # (Podríamos añadir duration y energy si las extraemos del tracker)
-        }
-    }
+    # 3. Generar predicciones para todos los ítems para este usuario
+    predictions = []
     
-    all_results[dataset_key][model_name][user_key] = results_data
-
-    with open(filepath, 'w') as f:
-        json.dump(all_results, f, indent=4, sort_keys=True)
+    tracker = EmissionsTracker(log_level='error')
+    emissions_data = None
     
-    print(f"\nResultados individuales guardados en '{filepath}' para el usuario {user_id}.")
+    try:
+        if model_name in ['svd_model', 'item_knn_model', 'user_knn_model']:
+            # Lógica para Surprise: predecir para todos los ítems raw
+            tracker.start()
+            for i, item_raw_id in enumerate(all_item_raw_ids):
+                # Surprise maneja raw IDs (sean string o int)
+                pred = model.predict(uid=user_id_int, iid=item_raw_id) 
+                predictions.append({'movieId_raw': item_raw_id, 'score': pred.est})
+            emissions = tracker.stop()
+            emissions_data = getattr(tracker, 'final_emissions_data', None)
+                
+        elif model_name in ['lightfm_model', 'als_model']:
+            # Lógica para LightFM/ALS: predecir para todos los índices
+            user_idx_array = np.array([user_idx] * num_all_items, dtype=np.int32)
+            item_indices_array = np.array(all_item_indices, dtype=np.int32)
+            
+            if model_name == 'als_model':
+                num_users_model = model.user_factors.shape[0]
+                num_items_model = model.item_factors.shape[0]
+                if user_idx >= num_users_model:
+                    print(f"   [INFO] user_idx {user_idx} fuera de rango para factores ALS. No se puede predecir.")
+                    return pd.DataFrame(), None
+                valid_mask = item_indices_array < num_items_model
+                item_indices_array = item_indices_array[valid_mask]
+                all_item_raw_ids = np.array(all_item_raw_ids)[valid_mask]
+                user_idx_array = user_idx_array[valid_mask]
+            
+            tracker.start()
+            if model_name == 'lightfm_model':
+                scores = model.predict(user_idx_array, item_indices_array, num_threads=1)
+            else: # ALS
+                user_factor = model.user_factors[user_idx]
+                item_factors_batch = model.item_factors[item_indices_array]
+                scores = np.dot(item_factors_batch, user_factor)
+            emissions = tracker.stop()
+            emissions_data = getattr(tracker, 'final_emissions_data', None)
+                
+            predictions = [{'movieId_raw': raw_id, 'score': score} for raw_id, score in zip(all_item_raw_ids, scores)]
 
+        elif model_name in ['ncf_model', 'multivae_model']:
+            device = torch.device("cpu")
+            model.to(device)
+            
+            if model_name == 'ncf_model':
+                pred_loader = DataLoader(list(zip([user_idx] * num_all_items, all_item_indices)), batch_size=1024, shuffle=False)
+                scores = []
+                tracker.start()
+                with torch.no_grad():
+                    for batch in pred_loader:
+                        user_tensor = batch[0].long().to(device)
+                        item_tensor = batch[1].long().to(device)
+                        scores.extend(model(user_tensor, item_tensor).cpu().numpy().tolist())
+                emissions = tracker.stop()
+                emissions_data = getattr(tracker, 'final_emissions_data', None)
+                predictions = [{'movieId_raw': raw_id, 'score': score} for raw_id, score in zip(all_item_raw_ids, scores)]
+            
+            elif model_name == 'multivae_model':
+                # --- Preparación (Fuera del tracker) ---
+                train_file = os.path.join(data_path, 'train.csv')
+                train_df = pd.read_csv(train_file)
+                train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 4.0 else 0)
+                train_positive = train_df[train_df['rating_bin'] == 1].copy() # .copy() para evitar warning
+                train_positive.loc[:, 'user_idx_map'] = train_positive['userId'].map(user_map)
+                train_positive.loc[:, 'item_idx_map'] = train_positive['movieId'].map(item_map)
+                train_positive = train_positive.dropna(subset=['user_idx_map', 'item_idx_map'])
+                train_positive['user_idx_map'] = train_positive['user_idx_map'].astype(int)
+                train_positive['item_idx_map'] = train_positive['item_idx_map'].astype(int)
+                num_users = len(user_map)
+                num_items = len(item_map)
+                interactions_matrix = csr_matrix(
+                     (np.ones(len(train_positive)), (train_positive['user_idx_map'], train_positive['item_idx_map'])),
+                     shape=(num_users, num_items), dtype=np.float32)
+                user_history = torch.FloatTensor(interactions_matrix[user_idx].toarray()).to(device)
+                # --- Fin Preparación ---
 
-# --- Función Principal ---
+                tracker.start()
+                with torch.no_grad():
+                    recon_logits, _, _ = model(user_history)
+                    log_probs = torch.log_softmax(recon_logits, dim=-1).squeeze()
+                    scores = log_probs.cpu().numpy()
+                emissions = tracker.stop()
+                emissions_data = getattr(tracker, 'final_emissions_data', None)
+                    
+                # item_map tiene claves string (ISBNs) y valores int (índices)
+                predictions = [{'movieId_raw': raw_id, 'score': scores[idx]} for raw_id, idx in item_map.items()]
+
+        elif model_name == 'most_popular_model':
+            popularity_scores, global_average = model
+            tracker.start()
+            for item_raw_id in all_item_raw_ids:
+                # popularity_scores tiene claves string (ISBNs)
+                score = popularity_scores.get(item_raw_id, global_average)
+                predictions.append({'movieId_raw': item_raw_id, 'score': score})
+            emissions = tracker.stop()
+            emissions_data = getattr(tracker, 'final_emissions_data', None)
+                
+        elif model_name == 'random_model':
+            random_gen = np.random.RandomState(RANDOM_SEED)
+            tracker.start()
+            scores = random_gen.uniform(1.0, 5.0, num_all_items)
+            emissions = tracker.stop()
+            emissions_data = getattr(tracker, 'final_emissions_data', None)
+            predictions = [{'movieId_raw': raw_id, 'score': score} for raw_id, score in zip(all_item_raw_ids, scores)]
+            
+        else:
+            print(f"   [ERROR] Lógica de predicción Top-10 no definida para: {model_name}")
+            return pd.DataFrame(), None
+
+    except Exception as e:
+        print(f"   [ERROR] Falló la predicción individual para {model_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        emissions = tracker.stop() # Intentar detener si falló
+        emissions_data = getattr(tracker, 'final_emissions_data', None)
+        return pd.DataFrame(), emissions_data # Devolver datos de emisión parciales si existen
+
+    # 4. Ordenar y obtener Top-10
+    if not predictions:
+        print("   [ERROR] No se generó ninguna predicción.")
+        return pd.DataFrame(), emissions_data
+        
+    pred_df = pd.DataFrame(predictions)
+    
+    # <<<<<<< CAMBIO CRÍTICO: Filtrar ítems ya vistos (train) >>>>>>>
+    try:
+        # Cargar historial de train del usuario
+        train_file = os.path.join(data_path, 'train.csv')
+        if not os.path.exists(train_file):
+            print(f"   [ADVERTENCIA] No se encontró {train_file}, no se pueden filtrar ítems ya vistos.")
+            seen_items = set()
+        else:
+            # Cargar solo las filas del usuario relevante
+            chunk_iter = pd.read_csv(train_file, usecols=['userId', 'movieId'], chunksize=100000)
+            # Comparar user_id (int) con la columna userId (que también debe ser int)
+            user_train_df = pd.concat([chunk[chunk['userId'] == user_id_int] for chunk in chunk_iter])
+            seen_items = set(user_train_df['movieId'].unique()) # IDs de movieId pueden ser strings
+            print(f"   Se encontraron {len(seen_items)} ítems en el historial de train del usuario {user_id} para filtrar.")
+            
+        # Filtrar el DataFrame de predicciones
+        pred_df_unseen = pred_df[~pred_df['movieId_raw'].isin(seen_items)]
+        print(f"   Predicciones reducidas de {len(pred_df)} a {len(pred_df_unseen)} después de filtrar ítems vistos.")
+        
+        if pred_df_unseen.empty:
+            print("   [ADVERTENCIA] No quedaron ítems después de filtrar los ya vistos.")
+            return pd.DataFrame(), emissions_data
+            
+        top_10_df = pred_df_unseen.nlargest(10, 'score')
+        
+    except Exception as e:
+        print(f"   [ERROR] Falló al filtrar ítems ya vistos: {e}")
+        top_10_df = pred_df.nlargest(10, 'score')
+    # --- Fin del cambio ---
+    
+    print(f"   Top-10 generado exitosamente para usuario {user_id}.")
+    return top_10_df, emissions_data
+
+# --- Función Principal de Ejecución ---
 def main(args):
-    print(f"--- Generando Top-10 para Usuario: {args.user_id} ---")
+    # <<<<<<< CAMBIO (Book-Crossings): Capturar args como strings >>>>>>>
+    user_id_str = args.user_id # user_id es ahora un string
+    user_category = args.user_category
+    
+    print(f"--- Generando Top-10 para Usuario: {user_id_str} ({user_category}) ---")
     print(f"Modelo: {args.model_name}, Dataset: {args.dataset_percentage}%")
 
-    # --- 1. Definir Rutas ---
+    # --- 1. Determinar Rutas ---
     data_path = os.path.join('data', args.dataset_percentage)
     model_dir = os.path.join('trained_models', args.dataset_percentage)
-    results_file = 'individual_results.json'
-
-    # Rutas del modelo y mapas
+    
     extension = '.pkl'
     is_pytorch_model = args.model_name in ['ncf_model', 'lightgcn_model', 'multivae_model']
     if is_pytorch_model: extension = '.pth'
     elif args.model_name == 'most_popular_model': extension = '.json'
     model_path = os.path.join(model_dir, f"{args.model_name}{extension}")
 
-    # --- 2. Cargar Módulo de Modelo ---
-    try:
-        model_module = importlib.import_module(f"models.{args.model_name}")
-    except ImportError:
-        print(f"[ERROR] No se pudo encontrar el módulo 'models/{args.model_name}.py'.")
-        return
+    RESULTS_JSON_FILE = 'individual_results.json'
 
-    # --- 3. Cargar Mapas (si es necesario) ---
+    # --- 2. Cargar Mapas (si es necesario) ---
     user_map, item_map = None, None
     needs_maps = args.model_name not in ['svd_model', 'item_knn_model', 'user_knn_model', 'most_popular_model', 'random_model']
     if needs_maps:
@@ -207,124 +394,140 @@ def main(args):
             print("[ERROR] No se pudieron cargar los mapas necesarios para este modelo.")
             return
 
-    # --- 4. Cargar el Modelo Entrenado ---
+    # --- 3. Cargar Modelo ---
     model = None
-    kwargs = {} # Argumentos extra para constructores de PyTorch
-    
-    # Lógica especial para modelos que necesitan dependencias reconstruidas
-    if args.model_name in ['lightgcn_model', 'multivae_model', 'als_model']:
-        # Reconstruir las dependencias que estos modelos necesitan (mapas, matrices)
-        print("   Reconstruyendo dependencias de preproceso (mapas, matrices)...")
-        # (Esto es una simplificación, llamamos a preprocess_data solo para obtener los mapas
-        #  y la matriz de LightGCN. Idealmente, guardaríamos la matriz también.)
-        try:
-             # Llamar a la función preprocess del módulo específico
-             temp_train, temp_pred, temp_u_map, temp_i_map = model_module.preprocess_data(data_path)
-             if args.model_name == 'lightgcn_model':
-                 kwargs['norm_adj_matrix'] = temp_train['norm_adj_matrix']
-             elif args.model_name == 'multivae_model':
-                 # MultiVAE necesita la matriz de interacciones para predicción
-                 kwargs['interactions_matrix'] = temp_pred['interactions_matrix']
-        except Exception as e:
-             print(f"[ERROR] Falló al reconstruir dependencias de preproceso para {args.model_name}: {e}")
-             return
-    
-    # Cargar el objeto/estado del modelo
+    try:
+        user_id_int = int(user_id_str) # Convertir user_id a int para los modelos que lo necesitan
+    except ValueError:
+        print(f"[ERROR] User ID '{user_id_str}' no es un entero válido.")
+        return
+        
     try:
         if args.model_name in ['svd_model', 'item_knn_model', 'user_knn_model']:
             model = load_surprise_model(model_path)
         elif args.model_name in ['lightfm_model', 'als_model']:
             model = load_pickle_model(model_path, args.model_name)
         elif args.model_name == 'ncf_model':
-             model = load_pytorch_model(NCF, model_path, user_map, item_map, embedding_dim=64, mlp_layers=[64, 32, 16])
+             model = load_pytorch_model(NCF, model_path, user_map, item_map,
+                                        embedding_dim=64, mlp_layers=[64, 32, 16])
         elif args.model_name == 'multivae_model':
-             model = load_pytorch_model(MultiVAE, model_path, user_map, item_map, hidden_dim=600, latent_dim=200)
+             model = load_pytorch_model(MultiVAE, model_path, user_map, item_map,
+                                        hidden_dim=600, latent_dim=200)
         elif args.model_name == 'lightgcn_model':
-             model = load_pytorch_model(LightGCN, model_path, user_map, item_map, num_layers=3, embedding_dim=64, **kwargs)
+             print("[ERROR] Carga individual de LightGCN no está soportada. Omitiendo.")
+             return
         elif args.model_name == 'most_popular_model':
-             model = load_most_popular(model_path) # Retorna (scores, avg)
+             model = load_most_popular(model_path)
         elif args.model_name == 'random_model':
-             model = {'min_rating': 1.0, 'max_rating': 5.0} # Placeholder
+             model = {'min_rating': 1.0, 'max_rating': 5.0}
         else:
             print(f"[ERROR] Lógica de carga no definida para: {args.model_name}")
             return
-    except Exception as e:
-        print(f"[ERROR] Falló la carga del modelo: {e}")
-        return
-
-    if model is None:
-        print("[ERROR] Carga del modelo fallida, abortando.")
-        return
-
-    # --- 5. Preparar Datos de Predicción (Antitest del Usuario) ---
-    try:
-        antitest_file = os.path.join(data_path, 'antitest.csv')
-        full_antitest_df = pd.read_csv(antitest_file)
-        # Filtrar solo para el usuario de interés
-        user_antitest_df = full_antitest_df[full_antitest_df['userId'] == args.user_id].copy()
-        if user_antitest_df.empty:
-            print(f"[ERROR] Usuario {args.user_id} no tiene ítems en el archivo antitest.")
-            return
-        print(f"   Se van a rankear {len(user_antitest_df)} ítems para el usuario {args.user_id}.")
-    except Exception as e:
-        print(f"[ERROR] No se pudo cargar o filtrar el archivo antitest: {e}")
-        return
-        
-    # --- 6. Medir Inferencia Top-10 ---
-    print("   Iniciando tracker de CodeCarbon para la predicción...")
-    prediction_tracker = EmissionsTracker(log_level='error', save_to_file=False) # No guardar log de tracker
-    prediction_emissions = None
-    
-    try:
-        prediction_tracker.start()
-        
-        # Preparar el diccionario de componentes
-        prediction_components_user = {
-            'antitest_df': user_antitest_df, # Pasar el DF filtrado
-            'user_map': user_map,
-            'item_map': item_map
-        }
-        # Añadir dependencias especiales
-        if args.model_name == 'lightgcn_model':
-            prediction_components_user['edge_index'] = kwargs.get('norm_adj_matrix') # Renombrar clave si es necesario
-        if args.model_name == 'multivae_model':
-            prediction_components_user['interactions_matrix'] = kwargs.get('interactions_matrix')
-
-        # Llamar a la función generate_predictions del modelo
-        # Usamos * para desempaquetar la tupla de args
-        predictions_df = model_module.generate_predictions(model, prediction_components_user)
-
-        # Detener el tracker
-        prediction_emissions = prediction_tracker.stop()
-        print("   Tracker de CodeCarbon detenido.")
-
-        if predictions_df is None or predictions_df.empty:
-            print("[ERROR] La función generate_predictions no devolvió resultados.")
+            
+        if model is None:
+            print(f"[ERROR] Falló la carga del modelo '{args.model_name}'.")
             return
             
-        # --- 7. Procesar Resultados ---
-        # Ordenar por predicción y tomar Top 10
-        top_10_df = predictions_df.sort_values(by='prediction', ascending=False).head(10)
-        top_10_movie_ids = top_10_df['movieId'].tolist() # Guardar los IDs originales
-
-        print("\n--- Top 10 Recomendaciones ---")
-        print(top_10_df)
-        
-        # --- 8. Guardar Resultados ---
-        save_individual_results(results_file, args.dataset_percentage, args.model_name, args.user_id, top_10_movie_ids, prediction_emissions)
-
     except Exception as e:
-        print(f"[ERROR] Falló la generación de predicciones Top-10: {e}")
+        print(f"[ERROR] Falló al cargar o instanciar el modelo: {e}")
         import traceback
         traceback.print_exc()
-        if prediction_tracker._running:
-            prediction_tracker.stop()
+        return
+
+    # --- 4. Medir Inferencia Individual ---
+    print("\n--- MIDIENDO INFERENCIA INDIVIDUAL ---")
+    
+    try:
+        # Llamar a la función que ahora contiene el tracker
+        top_10_df, emissions_data = get_single_top10(
+            model_name=args.model_name,
+            model=model,
+            data_path=data_path,
+            user_map=user_map,
+            item_map=item_map,
+            user_id=user_id_int # Pasar el ID como entero
+        )
+    except Exception as e:
+        print(f"[ERROR] Falló la ejecución de get_single_top10: {e}")
+        import traceback
+        traceback.print_exc()
+        top_10_df, emissions_data = pd.DataFrame(), None # Asegurar que existan
+    
+    print("--- MEDICIÓN FINALIZADA ---")
+
+    # --- 5. Recopilar y Guardar Resultados ---
+    if top_10_df.empty:
+        print("No se generó Top-10. No se guardarán resultados.")
+        return
         
+    top_10_list = top_10_df['movieId_raw'].tolist() # movieIds (ISBNs) son strings
+    
+    results_data = {
+        "top_10_recommendations": top_10_list,
+        "inference_footprint": {
+            "co2_emissions_g": emissions_data.emissions * 1000 if emissions_data and emissions_data.emissions is not None else None,
+            "energy_consumed_kWh": emissions_data.energy_consumed if emissions_data else None,
+            "duration_seconds": emissions_data.duration if emissions_data else None
+        }
+    }
+    
+    # Cargar y actualizar el archivo JSON de resultados individuales
+    if os.path.exists(RESULTS_JSON_FILE):
+        with open(RESULTS_JSON_FILE, 'r') as f:
+            try:
+                all_results = json.load(f)
+            except json.JSONDecodeError:
+                all_results = {}
+    else:
+        all_results = {}
+
+    dataset_key = str(args.dataset_percentage)
+    # Crear la clave compuesta (ej. "11676 (Power User)")
+    user_key = f"{user_id_str} ({user_category})"
+    
+    all_results.setdefault(dataset_key, {}).setdefault(args.model_name, {})[user_key] = results_data
+    
+    try:
+        save_json_with_numpy(all_results, RESULTS_JSON_FILE)
+    except Exception as e:
+        print(f"[ERROR] No se pudo guardar el archivo {RESULTS_JSON_FILE}: {e}")
+
+    # --- 6. Reporte Final en Consola ---
+    print("\n" + "="*60)
+    print(f"REPORTE DE INFERENCIA INDIVIDUAL (Usuario: {user_key})")
+    print("="*60)
+    print(f"  Modelo: {args.model_name} (Dataset: {args.dataset_percentage}%)")
+    print(f"  Top 10 (MovieIDs/ISBNs): {top_10_list}")
+    if emissions_data:
+        print(f"  Duración de Inferencia: {emissions_data.duration:.6f} segundos")
+        print(f"  Energía Consumida: {emissions_data.energy_consumed:.10f} kWh")
+        print(f"  Emisiones CO₂: {emissions_data.emissions * 1000:.10f} g")
+    else:
+        print("  No se pudieron obtener datos de CodeCarbon.")
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generar Top-10 recs para un usuario y medir huella de carbono.")
+    parser = argparse.ArgumentParser(description="Carga un modelo entrenado y genera un Top-10 para un usuario, midiendo la huella de carbono.")
     parser.add_argument("--model_name", type=str, required=True, help="Nombre del modelo (ej: svd_model)")
     parser.add_argument("--dataset_percentage", type=str, required=True, choices=['10', '25', '50', '75', '100'], help="Porcentaje del dataset")
-    parser.add_argument("--user_id", type=int, required=True, help="ID del usuario para el que se generará el Top-10")
+    # <<<<<<< CAMBIO (Book-Crossings): Aceptar ID como string >>>>>>>
+    parser.add_argument("--user_id", type=str, required=True, help="ID del usuario (el ID original, ej. '11676')")
+    parser.add_argument("--user_category", type=str, default="General", help="Categoría del usuario (ej: Power User)")
 
     args = parser.parse_args()
+    
+    # Validar que las clases PyTorch estén disponibles si se necesitan
+    if args.model_name in ['ncf_model', 'lightgcn_model', 'multivae_model']:
+         if (args.model_name == 'ncf_model' and 'NCF' in globals() and NCF.__name__ == 'NCF') or \
+            (args.model_name == 'multivae_model' and 'MultiVAE' in globals() and MultiVAE.__name__ == 'MultiVAE'):
+              pass # OK
+         elif (args.model_name == 'lightgcn_model'):
+              print("[ERROR] Carga individual de LightGCN no está soportada.")
+              sys.exit(1)
+         else:
+              # Esto puede pasar si la importación al inicio falló
+              print("[ERROR] Clases PyTorch no importadas correctamente. Verifica la ruta y los archivos.")
+              sys.exit(1)
+
     main(args)
+

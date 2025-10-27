@@ -1,0 +1,11 @@
+=== Eficiencia operativa (NDCG@10 por kWh) ===
+als_model:   NDCG/kWh total: 2.9485 | entrenamiento 73.3% | predicción 26.7%
+item_knn_model:   No hay observaciones para el 100% del dataset.
+lightfm_model:   NDCG/kWh total: 213.4402 | entrenamiento 33.1% | predicción 66.9%
+lightgcn_model:   NDCG/kWh total: 0.6027 | entrenamiento 97.9% | predicción 2.1%
+most_popular_model:   NDCG/kWh total: 2.3501 | entrenamiento 5.1% | predicción 94.9%
+multivae_model:   NDCG/kWh total: 0.2167 | entrenamiento 91.1% | predicción 8.9%
+ncf_model:   NDCG/kWh total: 0.3345 | entrenamiento 81.7% | predicción 18.3%
+random_model:   NDCG/kWh total: 55.8258 | entrenamiento 0.3% | predicción 99.7%
+svd_model:   NDCG/kWh total: 2.8058 | entrenamiento 1.4% | predicción 98.6%
+user_knn_model:   NDCG/kWh total: 0.6528 | entrenamiento 13.2% | predicción 86.8%

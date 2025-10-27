@@ -1,0 +1,184 @@
+Análisis Numérico de Resultados de Inferencia Individual (Top-10)
+=================================================================
+Generado el: 2025-10-26 18:28:43.664639
+Basado en 252 mediciones de 'individual_results.json'
+
+Definiciones de Perfiles de Usuario
+------------------------------------
+--- Power User ---
+Descripción: Usuarios que están consistentemente en el 20% superior de actividad. Se selecciona el más activo.
+
+--- Cold-Start User ---
+Descripción: Usuarios que están consistentemente en el 20% inferior de actividad. Se selecciona el menos activo.
+
+--- Critic ---
+Descripción: Usuarios que están consistentemente en el 20% inferior de rating promedio. Se selecciona el más activo de este grupo.
+
+--- Fan ---
+Descripción: Usuarios que están consistentemente en el 20% superior de rating promedio. Se selecciona el más activo de este grupo.
+
+--- Niche Seeker ---
+Descripción: Usuarios que consistentemente prefieren ítems de baja popularidad (long-tail). Se selecciona el más activo de este grupo.
+
+--- Mainstream User ---
+Descripción: Usuarios que consistentemente prefieren ítems de alta popularidad (blockbusters). Se selecciona el más activo de este grupo.
+
+--- Análisis 1: Costo Promedio por Modelo (General) ---
+Duración (s) y energía (kWh): media, desviación estándar, mínimo y máximo. Ordenado por mayor duración media.
+                   duration_s                                   energy_kwh                                 
+                         mean        std        min         max       mean        std        min        max
+model                                                                                                      
+item_knn_model     5.47423349 3.66709912 3.47100646 16.61062617 0.00000198 0.00000341 0.00000014 0.00001230
+user_knn_model     3.66849665 0.12843969 3.46076129  3.87897787 0.00000023 0.00000011 0.00000006 0.00000041
+most_popular_model 3.60436523 0.06126074 3.48163488  3.73514979 0.00000016 0.00000005 0.00000006 0.00000023
+svd_model          3.60012267 0.08683900 3.46472671  3.70884279 0.00000017 0.00000007 0.00000006 0.00000027
+ncf_model          3.52052267 0.04529851 3.42230904  3.60690967 0.00000008 0.00000004 0.00000002 0.00000015
+lightfm_model      3.46309707 0.02761692 3.40933729  3.51816054 0.00000001 0.00000000 0.00000000 0.00000002
+random_model       3.45221900 0.03872840 3.39812787  3.60173071 0.00000000 0.00000000 0.00000000 0.00000002
+multivae_model     3.44758161 0.02474478 3.40235763  3.50798904 0.00000001 0.00000001 0.00000000 0.00000003
+als_model          3.44553382 0.03192228 3.37793383  3.53530129 0.00000001 0.00000000 0.00000000 0.00000002
+
+Duración media más alta: item_knn_model = 5.4742s.
+Duración media más baja: als_model = 3.4455s.
+Energía media más alta: item_knn_model = 0.00000198 kWh.
+Energía media más baja: random_model = 0.00000000 kWh.
+
+
+--- Análisis 2: Costo Promedio por Perfil de Usuario (General) ---
+Duración (s) y energía (kWh): media, desviación estándar, mínimo y máximo por perfil de usuario.
+                duration_s                                   energy_kwh                                 
+                      mean        std        min         max       mean        std        min        max
+user_category                                                                                           
+Power User      3.89783889 2.04947491 3.37793383 16.61062617 0.00000043 0.00000192 0.00000000 0.00001230
+Critic          3.60498963 0.52194606 3.41174050  6.83418096 0.00000016 0.00000049 0.00000000 0.00000319
+Mainstream User 3.57539373 0.26250686 3.40292146  5.06722583 0.00000013 0.00000030 0.00000000 0.00000189
+Fan             3.56879146 0.24952331 3.41381479  5.01177267 0.00000012 0.00000023 0.00000000 0.00000145
+Niche Seeker    3.54183667 0.11305812 3.41821788  3.85410858 0.00000009 0.00000011 0.00000000 0.00000036
+Cold-Start User 3.51945827 0.11290127 3.39812787  3.80459546 0.00000010 0.00000011 0.00000000 0.00000035
+
+Relación de duración media Power User / Cold-Start User: 1.11x.
+
+
+--- Análisis 3: Resumen Estadístico por Tamaño de Dataset ---
+Duración (s) y energía (kWh) media, desviación estándar, mínimo y máximo por porcentaje del dataset.
+        duration_s                                   energy_kwh                                 
+              mean        std        min         max       mean        std        min        max
+dataset                                                                                         
+10      3.52841073 0.36048613 3.39812787  6.03189904 0.00000011 0.00000036 0.00000000 0.00000260
+25      3.87878435 1.84458497 3.40235763 16.61062617 0.00000041 0.00000173 0.00000000 0.00001230
+50      3.54141023 0.09350951 3.41648596  3.76375183 0.00000009 0.00000010 0.00000000 0.00000033
+75      3.55665885 0.12387566 3.40292146  3.81745858 0.00000011 0.00000012 0.00000000 0.00000036
+100     3.56360652 0.13622978 3.37793383  3.87897787 0.00000012 0.00000013 0.00000000 0.00000041
+
+--- Análisis 4: Escalabilidad de Inferencia (10% vs 100% del dataset) ---
+Comparativa de duración y energía medias entre entrenamientos con 10% y 100% del dataset.
+Duración 10% vs 100% (media por modelo):
+                    duration_10  duration_100  ratio_duracion_100_vs_10
+model                                                                  
+user_knn_model           3.4843        3.8017                    1.0911
+svd_model                3.4729        3.7008                    1.0656
+most_popular_model       3.5172        3.6575                    1.0399
+ncf_model                3.4582        3.5617                    1.0299
+random_model             3.4194        3.4463                    1.0079
+multivae_model           3.4279        3.4488                    1.0061
+lightfm_model            3.4355        3.4502                    1.0043
+als_model                3.4410        3.4418                    1.0003
+
+Energía 10% vs 100% (media por modelo):
+                    energy_10_kwh  energy_100_kwh  ratio_energia_100_vs_10
+model                                                                     
+user_knn_model         0.00000007      0.00000035               5.08489610
+multivae_model         0.00000000      0.00000002               4.76229687
+ncf_model              0.00000003      0.00000013               4.51105868
+svd_model              0.00000006      0.00000025               4.08783479
+lightfm_model          0.00000000      0.00000001               2.35349288
+most_popular_model     0.00000009      0.00000021               2.34624023
+als_model              0.00000000      0.00000000               1.39646293
+random_model           0.00000001      0.00000000               0.52493459
+
+Mayor relación duración 100%/10%: user_knn_model = 1.09x.
+Menor relación duración 100%/10%: als_model = 1.00x.
+
+
+--- Análisis 5: Valores Extremos Registrados ---
+Duración (s) y energía (kWh) mínima, máxima, media y mediana considerando todas las mediciones.
+        duration_s  energy_kwh
+min     3.37793383  0.00000000
+max    16.61062617  0.00001230
+mean    3.61805144  0.00000017
+median  3.48787362  0.00000004
+
+--- Análisis 6: Desglose por Perfil de Usuario y Modelo ---
+Duración (s) y energía (kWh) media, desviación estándar, mínimo y máximo para cada combinación perfil-modelo.
+                                    duration_s                                   energy_kwh                                 
+                                          mean        std        min         max       mean        std        min        max
+user_category   model                                                                                                       
+Cold-Start User als_model           3.42898001 0.01777677 3.40655654  3.45506154 0.00000001 0.00000000 0.00000000 0.00000001
+                item_knn_model      3.59401067 0.17395422 3.47100646  3.71701488 0.00000030 0.00000003 0.00000028 0.00000031
+                lightfm_model       3.44925559 0.02933515 3.40933729  3.47945875 0.00000001 0.00000000 0.00000000 0.00000001
+                most_popular_model  3.59983083 0.05185767 3.53279146  3.66998542 0.00000016 0.00000005 0.00000009 0.00000021
+                multivae_model      3.43302619 0.01445168 3.41610004  3.45037038 0.00000001 0.00000001 0.00000000 0.00000002
+                ncf_model           3.50801897 0.05139574 3.42729333  3.55691087 0.00000008 0.00000004 0.00000003 0.00000013
+                random_model        3.43819821 0.02947812 3.39812787  3.47612821 0.00000000 0.00000000 0.00000000 0.00000000
+                svd_model           3.59993585 0.10390831 3.46957304  3.70225675 0.00000018 0.00000010 0.00000006 0.00000027
+                user_knn_model      3.66859957 0.15428558 3.48018288  3.80459546 0.00000024 0.00000014 0.00000007 0.00000035
+Critic          als_model           3.45106198 0.02441429 3.42505337  3.48817042 0.00000001 0.00000001 0.00000000 0.00000001
+                item_knn_model      5.34232938 2.10979674 3.85047779  6.83418096 0.00000180 0.00000196 0.00000042 0.00000319
+                lightfm_model       3.45135226 0.02902659 3.41236096  3.48455300 0.00000001 0.00000000 0.00000001 0.00000002
+                most_popular_model  3.60289079 0.06522050 3.54500942  3.70092092 0.00000016 0.00000005 0.00000011 0.00000021
+                multivae_model      3.44702416 0.03611399 3.41174050  3.50798904 0.00000001 0.00000001 0.00000000 0.00000002
+                ncf_model           3.50144266 0.05567927 3.42230904  3.55632013 0.00000008 0.00000004 0.00000003 0.00000013
+                random_model        3.45194737 0.01919718 3.42564912  3.47797462 0.00000000 0.00000000 0.00000000 0.00000001
+                svd_model           3.58515059 0.09021148 3.48530687  3.68752004 0.00000016 0.00000008 0.00000006 0.00000025
+                user_knn_model      3.65411136 0.12364285 3.51007271  3.78529479 0.00000023 0.00000012 0.00000008 0.00000034
+Fan             als_model           3.45132852 0.03084428 3.41648596  3.48757683 0.00000001 0.00000001 0.00000000 0.00000002
+                item_knn_model      4.39118998 0.87763645 3.77060729  5.01177267 0.00000089 0.00000079 0.00000033 0.00000145
+                lightfm_model       3.47502471 0.02846715 3.43533637  3.50809246 0.00000001 0.00000000 0.00000000 0.00000001
+                most_popular_model  3.62254224 0.06714219 3.52003887  3.67615054 0.00000016 0.00000004 0.00000009 0.00000020
+                multivae_model      3.45433674 0.01109385 3.44022062  3.46760771 0.00000001 0.00000001 0.00000000 0.00000002
+                ncf_model           3.52797222 0.02779198 3.49491775  3.56265421 0.00000008 0.00000004 0.00000003 0.00000013
+                random_model        3.45682696 0.03959695 3.41381479  3.51689708 0.00000000 0.00000000 0.00000000 0.00000001
+                svd_model           3.59175232 0.09472577 3.46472671  3.70464604 0.00000016 0.00000008 0.00000006 0.00000025
+                user_knn_model      3.64158853 0.12840349 3.46076129  3.76742650 0.00000022 0.00000011 0.00000007 0.00000033
+Mainstream User als_model           3.44076141 0.02895309 3.40292146  3.47329567 0.00000000 0.00000000 0.00000000 0.00000001
+                item_knn_model      4.48582581 0.82222379 3.90442579  5.06722583 0.00000117 0.00000102 0.00000046 0.00000189
+                lightfm_model       3.47391220 0.01879197 3.44551138  3.49135387 0.00000001 0.00000000 0.00000001 0.00000001
+                most_popular_model  3.60161830 0.04463353 3.53538217  3.65339646 0.00000016 0.00000004 0.00000010 0.00000020
+                multivae_model      3.45998962 0.02394740 3.42504008  3.48535179 0.00000002 0.00000001 0.00000001 0.00000003
+                ncf_model           3.54255642 0.05464998 3.45773842  3.60690967 0.00000008 0.00000004 0.00000002 0.00000012
+                random_model        3.44983663 0.02649813 3.41187858  3.48172892 0.00000000 0.00000000 0.00000000 0.00000000
+                svd_model           3.59504343 0.08591435 3.46661979  3.70089237 0.00000016 0.00000007 0.00000006 0.00000025
+                user_knn_model      3.67525898 0.14492162 3.46897442  3.82074946 0.00000021 0.00000011 0.00000006 0.00000034
+Niche Seeker    als_model           3.46764324 0.04550517 3.42636479  3.53530129 0.00000001 0.00000001 0.00000000 0.00000002
+                item_knn_model      3.71078248 0.20269372 3.56745637  3.85410858 0.00000025 0.00000015 0.00000014 0.00000036
+                lightfm_model       3.46767632 0.03966498 3.41821788  3.51816054 0.00000001 0.00000001 0.00000001 0.00000002
+                most_popular_model  3.61040845 0.08858587 3.48629642  3.73514979 0.00000016 0.00000006 0.00000007 0.00000023
+                multivae_model      3.45937999 0.02281445 3.43081154  3.48856467 0.00000002 0.00000001 0.00000001 0.00000002
+                ncf_model           3.52772285 0.05902376 3.43361175  3.58791513 0.00000009 0.00000005 0.00000003 0.00000015
+                random_model        3.44953020 0.01704441 3.42683754  3.46708342 0.00000000 0.00000000 0.00000000 0.00000001
+                svd_model           3.61138488 0.08678328 3.48324779  3.70069083 0.00000018 0.00000007 0.00000007 0.00000025
+                user_knn_model      3.67336906 0.12826917 3.49901442  3.81496608 0.00000023 0.00000012 0.00000007 0.00000036
+Power User      als_model           3.43342778 0.03701532 3.37793383  3.47608037 0.00000001 0.00000000 0.00000000 0.00000001
+                item_knn_model     11.32126260 7.48028969 6.03189904 16.61062617 0.00000745 0.00000686 0.00000260 0.00001230
+                lightfm_model       3.46136134 0.01799113 3.43486667  3.48177313 0.00000001 0.00000000 0.00000000 0.00000001
+                most_popular_model  3.58890078 0.07157034 3.48163488  3.64516263 0.00000014 0.00000006 0.00000006 0.00000020
+                multivae_model      3.43173293 0.02657823 3.40235763  3.47376400 0.00000001 0.00000001 0.00000000 0.00000002
+                ncf_model           3.51542290 0.02163611 3.48413538  3.53955050 0.00000008 0.00000004 0.00000003 0.00000012
+                random_model        3.46697461 0.08071846 3.40131004  3.60173071 0.00000001 0.00000001 0.00000000 0.00000002
+                svd_model           3.61746893 0.10448430 3.46776204  3.70884279 0.00000018 0.00000008 0.00000006 0.00000025
+                user_knn_model      3.69805238 0.15564272 3.48683733  3.87897787 0.00000023 0.00000013 0.00000007 0.00000041
+
+Perfil 'Cold-Start User': duración media más alta en user_knn_model = 3.6686s; duración media más baja en als_model = 3.4290s.
+Perfil 'Cold-Start User': energía media más alta en item_knn_model = 0.00000030 kWh; energía media más baja en random_model = 0.00000000 kWh.
+Perfil 'Critic': duración media más alta en item_knn_model = 5.3423s; duración media más baja en multivae_model = 3.4470s.
+Perfil 'Critic': energía media más alta en item_knn_model = 0.00000180 kWh; energía media más baja en random_model = 0.00000000 kWh.
+Perfil 'Fan': duración media más alta en item_knn_model = 4.3912s; duración media más baja en als_model = 3.4513s.
+Perfil 'Fan': energía media más alta en item_knn_model = 0.00000089 kWh; energía media más baja en random_model = 0.00000000 kWh.
+Perfil 'Mainstream User': duración media más alta en item_knn_model = 4.4858s; duración media más baja en als_model = 3.4408s.
+Perfil 'Mainstream User': energía media más alta en item_knn_model = 0.00000117 kWh; energía media más baja en random_model = 0.00000000 kWh.
+Perfil 'Niche Seeker': duración media más alta en item_knn_model = 3.7108s; duración media más baja en random_model = 3.4495s.
+Perfil 'Niche Seeker': energía media más alta en item_knn_model = 0.00000025 kWh; energía media más baja en random_model = 0.00000000 kWh.
+Perfil 'Power User': duración media más alta en item_knn_model = 11.3213s; duración media más baja en multivae_model = 3.4317s.
+Perfil 'Power User': energía media más alta en item_knn_model = 0.00000745 kWh; energía media más baja en als_model = 0.00000001 kWh.
+
+--- FIN DEL REPORTE ---

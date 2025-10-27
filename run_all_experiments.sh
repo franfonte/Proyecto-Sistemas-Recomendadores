@@ -1,8 +1,7 @@
 #!/bin/bash
 # Script para ejecutar todos los experimentos de modelos.
 
-# Detener el script si un comando falla
-set -e
+# Se ha quitado "set -e" para que el script continúe si un comando falla.
 
 # Lista de todos los modelos a ejecutar
 MODELS=(
@@ -31,6 +30,7 @@ PERCENTAGES=(
 echo "=================================================================="
 echo "INICIANDO EJECUCIÓN COMPLETA DE EXPERIMENTOS"
 echo "Usando el script: run_experiment_saves.py"
+echo "(El script continuará si un modelo individual falla)"
 echo "=================================================================="
 
 # Bucle anidado para ejecutar cada modelo con cada dataset
@@ -43,6 +43,7 @@ for perc in "${PERCENTAGES[@]}"; do
         echo "------------------------------------------------------------------"
         
         # Ejecutar el script principal de Python
+        # Si falla, imprimirá un error pero el bucle continuará
         python3 run_experiment_saves.py --model_name "$model" --dataset_percentage "$perc"
         
         echo "Completado: $model | $perc%"
