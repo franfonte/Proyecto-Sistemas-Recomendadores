@@ -13,7 +13,7 @@ REGULARIZATION = 0.01
 def preprocess_data(data_path):
     """
     Carga datos y los convierte al formato que 'implicit' ALS necesita:
-    - Binariza los ratings: >= 4.0 es 1 (positivo), < 4.0 se ignora.
+    - Binariza los ratings: >= 8.0 es 1 (positivo), < 8.0 se ignora.
     - Crea mapeos de ID GLOBALES basados en train + antitest.
     - Crea una matriz de interacciones dispersa (CSR) con dimensiones GLOBALES,
       rellenada solo con las interacciones positivas.
@@ -37,8 +37,8 @@ def preprocess_data(data_path):
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
     # --- Lógica de Binarización (Tu regla) ---
-    print("   Aplicando regla de binarización: rating >= 4.0 --> 1, < 4.0 se ignora")
-    train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 4.0 else 0)
+    print("   Aplicando regla de binarización: rating >= 8.0 --> 1, < 8.0 se ignora")
+    train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 8.0 else 0)
     train_positive = train_df[train_df['rating_bin'] == 1].copy()
 
     # Mapear IDs a índices GLOBALES en el DataFrame de entrenamiento positivo
@@ -49,7 +49,7 @@ def preprocess_data(data_path):
     train_positive.loc[:, 'user_idx'] = train_positive['user_idx'].astype(int)
     train_positive.loc[:, 'item_idx'] = train_positive['item_idx'].astype(int)
 
-    print(f"   Interacciones positivas (>=4) a usar para entrenamiento: {len(train_positive)}")
+    print(f"   Interacciones positivas (>=8) a usar para entrenamiento: {len(train_positive)}")
 
     # Crear la matriz de interacciones dispersa (CSR format) con las dimensiones GLOBALES
     interactions_matrix = csr_matrix(

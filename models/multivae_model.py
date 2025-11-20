@@ -140,8 +140,8 @@ def preprocess_data(data_path):
     print(f"   Usuarios únicos totales (train+antitest): {num_users}")
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
-    print("   Aplicando regla de binarización: rating >= 4.0 --> 1, < 4.0 se ignora")
-    train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 4.0 else 0)
+    print("   Aplicando regla de binarización: rating >= 8.0 --> 1, < 8.0 se ignora")
+    train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 8.0 else 0)
     train_positive = train_df[train_df['rating_bin'] == 1].copy()
 
     train_positive.loc[:, 'user_idx'] = train_positive['userId'].map(user_map)
@@ -149,7 +149,7 @@ def preprocess_data(data_path):
     train_positive = train_positive.dropna(subset=['user_idx', 'item_idx'])
     train_positive['user_idx'] = train_positive['user_idx'].astype(int)
     train_positive['item_idx'] = train_positive['item_idx'].astype(int)
-    print(f"   Interacciones positivas (>=4) a usar para entrenamiento: {len(train_positive)}")
+    print(f"   Interacciones positivas (>=8) a usar para entrenamiento: {len(train_positive)}")
 
     interactions_matrix = csr_matrix(
         (np.ones(len(train_positive)), (train_positive['user_idx'], train_positive['item_idx'])),

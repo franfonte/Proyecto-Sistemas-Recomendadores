@@ -273,7 +273,7 @@ def main(args):
                          try:
                              train_file = os.path.join(data_path, 'train.csv')
                              train_df = pd.read_csv(train_file)
-                             train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 4.0 else 0)
+                             train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 8.0 else 0)
                              train_positive = train_df[train_df['rating_bin'] == 1].copy()
                              train_positive.loc[:, 'user_idx_map'] = train_positive['userId'].map(user_map)
                              train_positive.loc[:, 'item_idx_map'] = train_positive['movieId'].map(item_map)
@@ -312,7 +312,7 @@ def main(args):
         elif args.model_name == 'random_model':
              # Generar predicción individual determinista
              random_gen = np.random.RandomState(RANDOM_SEED)
-             prediction_single = random_gen.uniform(1.0, 5.0)
+             prediction_single = random_gen.uniform(1.0, 10.0)
              print("[INFO] Predicción 'Random' individual generada.")
 
         else:

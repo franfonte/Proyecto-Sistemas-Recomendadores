@@ -176,7 +176,7 @@ def create_norm_adj_matrix(edge_index_np, num_users, num_items):
 def preprocess_data(data_path):
     """
     Preprocesa datos para LightGCN.
-    ¡CORREGIDO! Binariza los datos (>= 4.0) y crea la matriz dispersa.
+    ¡CORREGIDO! Binariza los datos (>= 8.0) y crea la matriz dispersa.
     """
     print(f"1. Preprocesando datos para LightGCN (Implementación Corregida) desde: {data_path}")
     train_file = os.path.join(data_path, 'train.csv')
@@ -194,8 +194,8 @@ def preprocess_data(data_path):
     print(f"   Items únicos totales (train+antitest): {num_items}")
 
     # <<<<<<< CORRECCIÓN CRÍTICA: Binarizar/Filtrar train_df >>>>>>>
-    print("   Aplicando regla de binarización: rating >= 4.0 --> 1 (Feedback Positivo)")
-    train_positive = train_df[train_df['rating'] >= 4.0].copy()
+    print("   Aplicando regla de binarización: rating >= 8.0 --> 1 (Feedback Positivo)")
+    train_positive = train_df[train_df['rating'] >= 8.0].copy()
     
     # Mapear train_positive
     train_positive['user_idx'] = train_positive['userId'].map(user_map)
@@ -203,7 +203,7 @@ def preprocess_data(data_path):
     train_positive = train_positive.dropna(subset=['user_idx', 'item_idx'])
     train_positive['user_idx'] = train_positive['user_idx'].astype(int)
     train_positive['item_idx'] = train_positive['item_idx'].astype(int)
-    print(f"   Interacciones positivas (>=4) a usar para grafo: {len(train_positive)}")
+    print(f"   Interacciones positivas (>=8) a usar para grafo: {len(train_positive)}")
 
     # Crear interacciones y edge_index (basado en train_positive)
     user_interactions = train_positive.groupby('user_idx')['item_idx'].apply(set).to_dict()

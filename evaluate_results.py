@@ -10,10 +10,10 @@ def calculate_rmse(merged_df):
         return np.nan
     return np.sqrt(((merged_df['rating'] - merged_df['prediction'])**2).mean())
 
-def calculate_ranking_metrics(predictions_df, test_df, k=10, relevance_threshold=4.0):
+def calculate_ranking_metrics(predictions_df, test_df, k=10, relevance_threshold=8.0):
     """
-    Calculates Precision@k, Recall@k, and nDCG@k.
-    This function now correctly handles the full list of predictions.
+    Calculates Precision@k, Recall@k, and nDCG@k using the 1-10 rating scale.
+    Items with rating >= relevance_threshold (default 8.0) count as relevant.
     """
     # Group predictions and test data by user
     user_predictions = predictions_df.groupby('userId')

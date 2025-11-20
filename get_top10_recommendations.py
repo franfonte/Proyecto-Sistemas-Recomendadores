@@ -268,7 +268,7 @@ def get_single_top10(model_name, model, data_path, user_map, item_map, user_id):
                 # --- Preparación (Fuera del tracker) ---
                 train_file = os.path.join(data_path, 'train.csv')
                 train_df = pd.read_csv(train_file)
-                train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 4.0 else 0)
+                train_df.loc[:, 'rating_bin'] = train_df['rating'].apply(lambda x: 1 if x >= 8.0 else 0)
                 train_positive = train_df[train_df['rating_bin'] == 1].copy() # .copy() para evitar warning
                 train_positive.loc[:, 'user_idx_map'] = train_positive['userId'].map(user_map)
                 train_positive.loc[:, 'item_idx_map'] = train_positive['movieId'].map(item_map)
@@ -307,7 +307,7 @@ def get_single_top10(model_name, model, data_path, user_map, item_map, user_id):
         elif model_name == 'random_model':
             random_gen = np.random.RandomState(RANDOM_SEED)
             tracker.start()
-            scores = random_gen.uniform(1.0, 5.0, num_all_items)
+            scores = random_gen.uniform(1.0, 10.0, num_all_items)
             emissions = tracker.stop()
             emissions_data = getattr(tracker, 'final_emissions_data', None)
             predictions = [{'movieId_raw': raw_id, 'score': score} for raw_id, score in zip(all_item_raw_ids, scores)]
@@ -419,7 +419,7 @@ def main(args):
         elif args.model_name == 'most_popular_model':
              model = load_most_popular(model_path)
         elif args.model_name == 'random_model':
-             model = {'min_rating': 1.0, 'max_rating': 5.0}
+             model = {'min_rating': 1.0, 'max_rating': 10.0}
         else:
             print(f"[ERROR] Lógica de carga no definida para: {args.model_name}")
             return

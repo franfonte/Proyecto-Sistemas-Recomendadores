@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 import sys
-import numpy as np
 import random
 from sklearn.model_selection import train_test_split as sklearn_train_test_split
 from surprise import Dataset, Reader
@@ -53,11 +52,11 @@ def create_dataset_subsets():
         sys.exit(1)
 
     df_explicit = df[df['Rating'] != 0].copy()
-    df_explicit['rating_1_5'] = np.ceil(df_explicit['Rating'] / 2).astype(int)
-    df_processed = df_explicit[['User-ID', 'ISBN', 'rating_1_5']]
+    df_explicit['Rating'] = df_explicit['Rating'].astype(int)
+    df_processed = df_explicit[['User-ID', 'ISBN', 'Rating']]
     df_processed.columns = ['userId', 'movieId', 'rating']
     
-    print(f"Dataset procesado: {len(df_processed)} ratings explícitos (escala 1-5)")
+    print(f"Dataset procesado: {len(df_processed)} ratings explícitos (escala 1-10)")
 
     # Filtrar usuarios con < 2 ratings para permitir la estratificación
     print("Filtrando usuarios con < 2 ratings para permitir la estratificación...")
@@ -104,7 +103,7 @@ def split_and_generate_antitest(subset_dir_path):
 
     # 1. Cargar datos con Surprise
     df = pd.read_csv(ratings_file)
-    reader = Reader(rating_scale=(1, 5))
+    reader = Reader(rating_scale=(1, 10))
     df = df.dropna(subset=['userId', 'movieId', 'rating'])
     data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
     

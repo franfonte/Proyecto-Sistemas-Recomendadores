@@ -14,7 +14,7 @@ def preprocess_data(data_path):
     train_df = pd.read_csv(train_file)
     antitest_df = pd.read_csv(antitest_file)
 
-    reader = Reader(rating_scale=(1, 5))
+    reader = Reader(rating_scale=(1, 10))
     
     train_data = Dataset.load_from_df(train_df[['userId', 'movieId', 'rating']], reader)
     trainset = train_data.build_full_trainset()

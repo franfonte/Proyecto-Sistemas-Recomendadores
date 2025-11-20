@@ -28,7 +28,7 @@ def train_model(train_df):
     """
     print("2. El modelo aleatorio no necesita entrenamiento.")
     # Se devuelve un diccionario con el rango de posibles valoraciones
-    model_info = {'min_rating': 1.0, 'max_rating': 5.0}
+    model_info = {'min_rating': 1.0, 'max_rating': 10.0}
     return model_info
 
 def generate_predictions(model_info, antitest_df):
