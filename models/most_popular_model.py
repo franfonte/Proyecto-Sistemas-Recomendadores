@@ -18,23 +18,38 @@ def preprocess_data(data_path):
 
 def train_model(train_df):
     """
-    "Entrena" calculando la calificación promedio de cada película.
-    Devuelve una serie de pandas con movieId como índice y la calificación promedio como valor.
+    "Entrena" calculando la FRECUENCIA de cada película y normalizándola a una escala 1-5.
+    Devuelve una serie de pandas con movieId como índice y el score de popularidad (1-5) como valor.
     """
-    print("2. Calculando la popularidad de las películas (calificación promedio)...")
+    print("2. Calculando popularidad (Frecuencia normalizada a escala 1.0 - 5.0)...")
     
-    # Calcular la calificación promedio para cada movieId
-    popularity_model = train_df.groupby('movieId')['rating'].mean()
+    # 1. Contar cuántas veces aparece cada película (Frecuencia real)
+    # Esto define el VERDADERO ranking de popularidad.
+    raw_counts = train_df.groupby('movieId')['rating'].count()
     
-    # Calcular el promedio global para rellenar en caso de películas no vistas en train
-    global_average = train_df['rating'].mean()
+    # 2. Normalización Min-Max para forzar el formato de "Ratings" (1.0 a 5.0)
+    # Así cumplimos con el requisito de formato sin perder el orden por popularidad.
+    max_views = raw_counts.max()
+    min_views = raw_counts.min()
     
-    print(f"   Modelo de popularidad creado. Promedio global: {global_average:.2f}")
+    if max_views == min_views:
+        # Caso borde: si todas tienen las mismas vistas o hay 1 sola película
+        popularity_model = raw_counts.apply(lambda x: 5.0)
+    else:
+        # Fórmula: Scaled = 1 + (x - min) * (5 - 1) / (max - min)
+        popularity_model = 1.0 + (raw_counts - min_views) * 4.0 / (max_views - min_views)
+    
+    # 3. Calcular el valor de relleno (global_average)
+    # Si una película no está en train, significa que tiene 0 vistas.
+    # Por lógica, es la MENOS popular posible, así que le asignamos el mínimo (1.0).
+    global_average = 1.0
+    
+    print(f"   Modelo de popularidad creado. Item más visto escalado a 5.0, menos visto a 1.0.")
     return popularity_model, global_average
 
 def generate_predictions(model, antitest_df):
     """
-    Asigna la calificación promedio de cada película como la predicción.
+    Asigna el score de popularidad (escala 1-5) de cada película como la predicción.
     """
     print("3. Generando predicciones basadas en popularidad...")
     popularity_scores, global_average = model
@@ -42,8 +57,8 @@ def generate_predictions(model, antitest_df):
     # Crea una copia para trabajar sobre ella
     predictions_df = antitest_df.copy()
 
-    # Usa .map para asignar la calificación promedio. Si una película en el antitest
-    # no estaba en el train set, se le asigna el promedio global.
+    # Usa .map para asignar el score calculado. Si una película en el antitest
+    # no estaba en el train set, se le asigna el valor mínimo (global_average = 1.0).
     predictions_df['prediction'] = predictions_df['movieId'].map(popularity_scores).fillna(global_average)
     
     print(f"   Se generaron {len(predictions_df)} predicciones.")
@@ -66,6 +81,12 @@ if __name__ == "__main__":
     # 3. Generar predicciones
     predictions = generate_predictions(trained_model, antitest_data)
     
+    # Guardar el resultado para que el script de evaluación lo pueda leer
+    # (Asumiendo que quieres sobrescribir el archivo defectuoso anterior)
+    output_file = os.path.join(DATA_PATH, 'most_popular_model_predictions.csv')
+    predictions.to_csv(output_file, index=False)
+    print(f"   Archivo guardado en: {output_file}")
+    
     print("\n--- Proceso del modelo de más populares finalizado ---")
-    print("Ejemplo de 5 predicciones:")
+    print("Ejemplo de 5 predicciones (Score de Popularidad):")
     print(predictions.head())
