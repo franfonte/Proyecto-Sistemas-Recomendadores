@@ -3,7 +3,7 @@ als_model:   NDCG/kWh total: 3097.4092 | entrenamiento 23.6% | predicción 76.4%
 item_knn_model:   NDCG/kWh total: 19.5621 | entrenamiento 0.3% | predicción 99.7%
 lightfm_model:   NDCG/kWh total: 48200.1328 | entrenamiento 72.2% | predicción 27.8%
 lightgcn_model:   NDCG/kWh total: 94.9390 | entrenamiento 97.8% | predicción 2.2%
-most_popular_model:   NDCG/kWh total: 56.1250 | entrenamiento 7.7% | predicción 92.3%
+most_popular_model:   NDCG/kWh total: 381051.2399 | entrenamiento 3.8% | predicción 96.2%
 multivae_model:   NDCG/kWh total: 1824.2501 | entrenamiento 10.1% | predicción 89.9%
 ncf_model:   NDCG/kWh total: 69.1975 | entrenamiento 63.2% | predicción 36.8%
 random_model:   NDCG/kWh total: 39388.9954 | entrenamiento 0.3% | predicción 99.7%

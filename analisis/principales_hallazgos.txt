@@ -15,9 +15,9 @@ Modelo: lightgcn_model
   Costo energético total asociado: 169.99% (Δ 0.000543 kWh)
   Último salto≥50%: NDCG 75.91% (Δ 0.1225) | energía 75.29% (Δ 0.001284 kWh)
 Modelo: most_popular_model
-  Mayor mejora de NDCG@10: inf% (Δ 0.0000) al pasar de 75% a 100%
-  Costo energético total asociado: -24.89% (Δ -0.000000 kWh)
-  Último salto≥50%: NDCG inf% (Δ 0.0000) | energía -24.89% (Δ -0.000000 kWh)
+  Mayor mejora de NDCG@10: 69.62% (Δ 0.0295) al pasar de 25% a 50%
+  Costo energético total asociado: 11.75% (Δ 0.000000 kWh)
+  Último salto≥50%: NDCG 64.50% (Δ 0.0677) | energía 49.55% (Δ 0.000000 kWh)
 Modelo: multivae_model
   Mayor mejora de NDCG@10: 129.85% (Δ 0.0605) al pasar de 25% a 50%
   Costo energético total asociado: -0.20% (Δ -0.000000 kWh)

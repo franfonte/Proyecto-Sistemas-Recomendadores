@@ -7,8 +7,8 @@ lightfm_model:   Mejor salto: 75%→100% | 116712.8530 NDCG/kWh
 lightfm_model:   Peor salto: 50%→75% | 43023.3249 NDCG/kWh
 lightgcn_model:   Mejor salto: 10%→25% | 112.5665 NDCG/kWh
 lightgcn_model:   Peor salto: 50%→75% | 73.6567 NDCG/kWh
-most_popular_model:   Mejor salto: 10%→25% | 2703.4539 NDCG/kWh
-most_popular_model:   Peor salto: 25%→50% | -2411.7934 NDCG/kWh
+most_popular_model:   Mejor salto: 25%→50% | 1153902.5442 NDCG/kWh
+most_popular_model:   Peor salto: 10%→25% | -150692.5335 NDCG/kWh
 multivae_model:   Mejor salto: 50%→75% | 27034.3772 NDCG/kWh
 multivae_model:   Peor salto: 25%→50% | -188699.7720 NDCG/kWh
 ncf_model:   Mejor salto: 75%→100% | 265.5628 NDCG/kWh

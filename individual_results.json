@@ -815,116 +815,116 @@
         "most_popular_model": {
             "4169 (Power User)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    2858,
+                    1196,
+                    1270,
+                    260,
+                    480,
+                    1210,
+                    2571,
+                    110,
+                    589,
+                    2028
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 1.708546151928221e-06,
-                    "energy_consumed_kWh": 5.869013585543143e-09,
-                    "duration_seconds": 3.433719041000586
+                    "co2_emissions_g": 3.4195365667712514e-06,
+                    "energy_consumed_kWh": 1.1746423439596483e-08,
+                    "duration_seconds": 3.530301040998893
                 }
             },
             "4226 (Cold-Start User)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    2858,
+                    1196,
+                    1270,
+                    593,
+                    260,
+                    480,
+                    1210,
+                    2571,
+                    110,
+                    589
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 5.183395269220631e-06,
-                    "energy_consumed_kWh": 1.780544073682945e-08,
-                    "duration_seconds": 3.4971695839776658
+                    "co2_emissions_g": 4.765192864226207e-06,
+                    "energy_consumed_kWh": 1.63688769111177e-08,
+                    "duration_seconds": 3.6229878750018543
                 }
             },
             "1941 (Critic)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    2858,
+                    1196,
+                    1270,
+                    593,
+                    260,
+                    480,
+                    2571,
+                    110,
+                    589,
+                    2028
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.0529483345561163e-06,
-                    "energy_consumed_kWh": 1.0487159056985143e-08,
-                    "duration_seconds": 3.4449732080101967
+                    "co2_emissions_g": 3.031385049313209e-06,
+                    "energy_consumed_kWh": 1.041308718371632e-08,
+                    "duration_seconds": 3.5128933749947464
                 }
             },
             "4277 (Fan)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    2858,
+                    1196,
+                    593,
+                    260,
+                    480,
+                    1210,
+                    2571,
+                    110,
+                    589,
+                    2028
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.1922432342121626e-06,
-                    "energy_consumed_kWh": 7.530557667339357e-09,
-                    "duration_seconds": 3.4570319589984138
+                    "co2_emissions_g": 4.154418383719666e-06,
+                    "energy_consumed_kWh": 1.4270810247978158e-08,
+                    "duration_seconds": 3.495593542000279
                 }
             },
             "4169 (Niche Seeker)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    2858,
+                    1196,
+                    1270,
+                    260,
+                    480,
+                    1210,
+                    2571,
+                    110,
+                    589,
+                    2028
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.778458978797235e-06,
-                    "energy_consumed_kWh": 9.544262807903579e-09,
-                    "duration_seconds": 3.4656110829964746
+                    "co2_emissions_g": 2.348370442647279e-06,
+                    "energy_consumed_kWh": 8.066869025592394e-09,
+                    "duration_seconds": 3.4896131670029717
                 }
             },
             "5557 (Mainstream User)": {
                 "top_10_recommendations": [
-                    394,
-                    1420,
-                    2610,
-                    962,
-                    746,
-                    853,
-                    2131,
-                    3382,
-                    997,
-                    567
+                    1196,
+                    1270,
+                    593,
+                    480,
+                    1210,
+                    2571,
+                    110,
+                    589,
+                    2028,
+                    2762
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 1.7254362485633644e-06,
-                    "energy_consumed_kWh": 5.927032625005975e-09,
-                    "duration_seconds": 3.4452523340005428
+                    "co2_emissions_g": 2.78973942681206e-06,
+                    "energy_consumed_kWh": 9.583012187061588e-09,
+                    "duration_seconds": 3.495902875001775
                 }
             }
         },
@@ -1861,116 +1861,116 @@
         "most_popular_model": {
             "4169 (Power User)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    2858,
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    1198,
+                    1580,
+                    2571,
+                    608,
+                    593
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.23720108472415e-06,
-                    "energy_consumed_kWh": 1.4555176459739514e-08,
-                    "duration_seconds": 3.4353215000010096
+                    "co2_emissions_g": 2.35352964897207e-06,
+                    "energy_consumed_kWh": 8.084591375074523e-09,
+                    "duration_seconds": 3.48592862499936
                 }
             },
             "4226 (Cold-Start User)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    2858,
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    480,
+                    1198,
+                    1580,
+                    2571,
+                    608
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.8985760301327976e-06,
-                    "energy_consumed_kWh": 9.956875955841194e-09,
-                    "duration_seconds": 3.4291107919998467
+                    "co2_emissions_g": 3.2355509005045294e-06,
+                    "energy_consumed_kWh": 1.1114415709722785e-08,
+                    "duration_seconds": 3.538322792002873
                 }
             },
             "1941 (Critic)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    2858,
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    480,
+                    2571,
+                    608,
+                    593,
+                    1617
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.0672215588179036e-06,
-                    "energy_consumed_kWh": 1.0536188898530479e-08,
-                    "duration_seconds": 3.443685833015479
+                    "co2_emissions_g": 3.5280404718930703e-06,
+                    "energy_consumed_kWh": 1.2119144359383024e-08,
+                    "duration_seconds": 3.504597625003953
                 }
             },
             "4277 (Fan)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    480,
+                    1198,
+                    1580,
+                    2571,
+                    608,
+                    593
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.662046390337588e-06,
-                    "energy_consumed_kWh": 1.257946704660248e-08,
-                    "duration_seconds": 3.473922625009436
+                    "co2_emissions_g": 3.887214683373228e-06,
+                    "energy_consumed_kWh": 1.3352940897085419e-08,
+                    "duration_seconds": 3.511013750001439
                 }
             },
             "4169 (Niche Seeker)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    2858,
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    1198,
+                    1580,
+                    2571,
+                    608,
+                    593
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.889660359056746e-06,
-                    "energy_consumed_kWh": 1.6796434233636925e-08,
-                    "duration_seconds": 3.4486773329845164
+                    "co2_emissions_g": 3.1821486771362608e-06,
+                    "energy_consumed_kWh": 1.0930974147964057e-08,
+                    "duration_seconds": 3.497204082996177
                 }
             },
             "5557 (Mainstream User)": {
                 "top_10_recommendations": [
-                    572,
-                    2930,
-                    1671,
-                    787,
-                    649,
-                    2503,
-                    3443,
-                    3232,
-                    2156,
-                    559
+                    1210,
+                    260,
+                    2028,
+                    1196,
+                    480,
+                    1580,
+                    2571,
+                    608,
+                    593,
+                    1617
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.937297476308244e-06,
-                    "energy_consumed_kWh": 1.352497990920448e-08,
-                    "duration_seconds": 3.491521791991545
+                    "co2_emissions_g": 1.5668156331455303e-06,
+                    "energy_consumed_kWh": 5.382156183837651e-09,
+                    "duration_seconds": 3.49327225000161
                 }
             }
         },
@@ -2907,116 +2907,116 @@
         "most_popular_model": {
             "4169 (Power User)": {
                 "top_10_recommendations": [
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309,
-                    2480
+                    2858,
+                    1196,
+                    260,
+                    1210,
+                    2028,
+                    589,
+                    1270,
+                    1580,
+                    2571,
+                    110
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.416476302025022e-06,
-                    "energy_consumed_kWh": 1.1735911147990718e-08,
-                    "duration_seconds": 3.4647052500222344
+                    "co2_emissions_g": 2.9047033050365473e-06,
+                    "energy_consumed_kWh": 9.977923710162538e-09,
+                    "duration_seconds": 3.499510540998017
                 }
             },
             "4226 (Cold-Start User)": {
                 "top_10_recommendations": [
-                    3517,
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309
+                    2858,
+                    1196,
+                    260,
+                    1210,
+                    480,
+                    2028,
+                    593,
+                    589,
+                    608,
+                    1270
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.428257239826388e-06,
-                    "energy_consumed_kWh": 1.52114719707687e-08,
-                    "duration_seconds": 3.4510650830052327
+                    "co2_emissions_g": 5.195941087455558e-06,
+                    "energy_consumed_kWh": 1.7848536779379682e-08,
+                    "duration_seconds": 3.5105032499996014
                 }
             },
             "1941 (Critic)": {
                 "top_10_recommendations": [
-                    3517,
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309
+                    2858,
+                    260,
+                    1210,
+                    480,
+                    593,
+                    589,
+                    1270,
+                    2571,
+                    1198,
+                    110
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.350478365514027e-06,
-                    "energy_consumed_kWh": 1.4944294365122915e-08,
-                    "duration_seconds": 3.465262750018155
+                    "co2_emissions_g": 2.587655091677364e-06,
+                    "energy_consumed_kWh": 8.888833860656733e-09,
+                    "duration_seconds": 3.5000409580025007
                 }
             },
             "4277 (Fan)": {
                 "top_10_recommendations": [
-                    3517,
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309
+                    1210,
+                    480,
+                    2028,
+                    608,
+                    2762,
+                    1580,
+                    2571,
+                    1198,
+                    527,
+                    1265
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.812843999948094e-06,
-                    "energy_consumed_kWh": 1.653256295647427e-08,
-                    "duration_seconds": 3.454706290998729
+                    "co2_emissions_g": 4.124740130459581e-06,
+                    "energy_consumed_kWh": 1.4168862711248141e-08,
+                    "duration_seconds": 3.4739856669984874
                 }
             },
             "4169 (Niche Seeker)": {
                 "top_10_recommendations": [
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309,
-                    2480
+                    2858,
+                    1196,
+                    260,
+                    1210,
+                    2028,
+                    589,
+                    1270,
+                    1580,
+                    2571,
+                    110
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.42712771560655e-06,
-                    "energy_consumed_kWh": 1.5207591950914423e-08,
-                    "duration_seconds": 3.463832125009503
+                    "co2_emissions_g": 2.419893551784348e-06,
+                    "energy_consumed_kWh": 8.312557500985348e-09,
+                    "duration_seconds": 3.4761841250001453
                 }
             },
             "5557 (Mainstream User)": {
                 "top_10_recommendations": [
-                    3517,
-                    3245,
-                    2358,
-                    2198,
-                    853,
-                    53,
-                    3012,
-                    2825,
-                    2673,
-                    2309
+                    2858,
+                    1196,
+                    260,
+                    480,
+                    2028,
+                    593,
+                    589,
+                    2762,
+                    1580,
+                    2571
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.308540102415646e-06,
-                    "energy_consumed_kWh": 1.4800232564040925e-08,
-                    "duration_seconds": 3.4899026670027524
+                    "co2_emissions_g": 6.854730446689941e-06,
+                    "energy_consumed_kWh": 2.354663119369434e-08,
+                    "duration_seconds": 3.471706999996968
                 }
             }
         },
@@ -3953,116 +3953,116 @@
         "most_popular_model": {
             "4169 (Power User)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    3607,
-                    3881,
-                    1830,
-                    3280,
-                    3233
+                    589,
+                    2762,
+                    2628,
+                    527,
+                    1097,
+                    2997,
+                    296,
+                    2716,
+                    1,
+                    2987
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 5.684810150895495e-06,
-                    "energy_consumed_kWh": 1.9527847093381245e-08,
-                    "duration_seconds": 3.502720166987274
+                    "co2_emissions_g": 3.920644893633995e-06,
+                    "energy_consumed_kWh": 1.3467776752099682e-08,
+                    "duration_seconds": 3.5375567090013647
                 }
             },
             "4226 (Cold-Start User)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    666,
-                    3607,
-                    3881,
-                    1830,
-                    3280
+                    2858,
+                    260,
+                    1196,
+                    1210,
+                    480,
+                    589,
+                    2028,
+                    1270,
+                    1198,
+                    593
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.906776124219242e-06,
-                    "energy_consumed_kWh": 1.3420136250250733e-08,
-                    "duration_seconds": 3.4864867920114193
+                    "co2_emissions_g": 2.173475216916135e-06,
+                    "energy_consumed_kWh": 7.46608779723384e-09,
+                    "duration_seconds": 3.5269530000005034
                 }
             },
             "1941 (Critic)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    666,
-                    3607,
-                    3881,
-                    1830,
-                    3280
+                    2858,
+                    1196,
+                    1210,
+                    480,
+                    593,
+                    2571,
+                    2396,
+                    2628,
+                    1617,
+                    1197
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 1.955256212849247e-06,
-                    "energy_consumed_kWh": 6.716485395187597e-09,
-                    "duration_seconds": 3.4795819999999367
+                    "co2_emissions_g": 4.9602549852729075e-06,
+                    "energy_consumed_kWh": 1.703893328457646e-08,
+                    "duration_seconds": 3.508337166000274
                 }
             },
             "4277 (Fan)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    666,
-                    3607,
-                    3881,
-                    1830,
-                    3280
+                    589,
+                    593,
+                    2571,
+                    608,
+                    2396,
+                    1265,
+                    1240,
+                    1,
+                    1214,
+                    541
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.601773076380272e-06,
-                    "energy_consumed_kWh": 1.2372422655052409e-08,
-                    "duration_seconds": 3.499882042000536
+                    "co2_emissions_g": 5.66607368898232e-06,
+                    "energy_consumed_kWh": 1.946348561892571e-08,
+                    "duration_seconds": 3.485815708998416
                 }
             },
             "4169 (Niche Seeker)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    3607,
-                    3881,
-                    1830,
-                    3280,
-                    3233
+                    589,
+                    2762,
+                    2628,
+                    527,
+                    1097,
+                    2997,
+                    296,
+                    2716,
+                    1,
+                    2987
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.8250132333641794e-06,
-                    "energy_consumed_kWh": 9.70418096534397e-09,
-                    "duration_seconds": 3.4658537499781232
+                    "co2_emissions_g": 4.77343489466017e-06,
+                    "energy_consumed_kWh": 1.6397189045697615e-08,
+                    "duration_seconds": 3.4771381249956903
                 }
             },
             "5557 (Mainstream User)": {
                 "top_10_recommendations": [
-                    3245,
-                    981,
-                    2198,
-                    2930,
-                    572,
-                    666,
-                    3607,
-                    3881,
-                    1830,
-                    3280
+                    260,
+                    1196,
+                    480,
+                    589,
+                    2028,
+                    1270,
+                    593,
+                    2762,
+                    2396,
+                    2628
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.05377161809489e-06,
-                    "energy_consumed_kWh": 7.054894896809452e-09,
-                    "duration_seconds": 3.4636560000071768
+                    "co2_emissions_g": 3.149092268396051e-06,
+                    "energy_consumed_kWh": 1.0817422335643035e-08,
+                    "duration_seconds": 3.510949832998449
                 }
             }
         },
@@ -4999,116 +4999,116 @@
         "most_popular_model": {
             "4169 (Power User)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    589,
+                    2028,
+                    593,
+                    110,
+                    1197,
+                    1,
+                    3578,
+                    541,
+                    50,
+                    924
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 5.191771778420037e-06,
-                    "energy_consumed_kWh": 1.7834214818369625e-08,
-                    "duration_seconds": 3.46090737497434
+                    "co2_emissions_g": 3.1539845547262366e-06,
+                    "energy_consumed_kWh": 1.0834227790329654e-08,
+                    "duration_seconds": 3.5053474590022233
                 }
             },
             "4226 (Cold-Start User)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    2858,
+                    260,
+                    1196,
+                    1210,
+                    480,
+                    589,
+                    2028,
+                    2571,
+                    1270,
+                    593
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 4.4482488243697825e-06,
-                    "energy_consumed_kWh": 1.5280144907200237e-08,
-                    "duration_seconds": 3.51839966699481
+                    "co2_emissions_g": 2.53588017112991e-06,
+                    "energy_consumed_kWh": 8.710982234149318e-09,
+                    "duration_seconds": 3.5219714580016444
                 }
             },
             "1941 (Critic)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    1196,
+                    480,
+                    1580,
+                    2396,
+                    2628,
+                    2997,
+                    356,
+                    2716,
+                    2987,
+                    780
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.2722021938295764e-06,
-                    "energy_consumed_kWh": 1.1240316282095188e-08,
-                    "duration_seconds": 3.482371833000798
+                    "co2_emissions_g": 3.5077971455963754e-06,
+                    "energy_consumed_kWh": 1.204960666681452e-08,
+                    "duration_seconds": 3.500433499997598
                 }
             },
             "4277 (Fan)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    2858,
+                    1196,
+                    1210,
+                    1270,
+                    1198,
+                    2762,
+                    527,
+                    1265,
+                    858,
+                    2716
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 3.272705086879528e-06,
-                    "energy_consumed_kWh": 1.1242043766096078e-08,
-                    "duration_seconds": 3.5042817920038942
+                    "co2_emissions_g": 3.353611589216963e-06,
+                    "energy_consumed_kWh": 1.1519965062422368e-08,
+                    "duration_seconds": 3.5084787079977104
                 }
             },
             "4169 (Niche Seeker)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    589,
+                    2028,
+                    593,
+                    110,
+                    1197,
+                    1,
+                    3578,
+                    541,
+                    50,
+                    924
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.9751249826044295e-06,
-                    "energy_consumed_kWh": 1.021982866654677e-08,
-                    "duration_seconds": 3.4699767919955775
+                    "co2_emissions_g": 4.673387650625451e-06,
+                    "energy_consumed_kWh": 1.6053517536576692e-08,
+                    "duration_seconds": 3.565995124998153
                 }
             },
             "5557 (Mainstream User)": {
                 "top_10_recommendations": [
-                    2309,
-                    130,
-                    3233,
-                    3656,
-                    989,
-                    3280,
-                    3172,
-                    787,
-                    687,
-                    3607
+                    480,
+                    593,
+                    608,
+                    2762,
+                    110,
+                    2396,
+                    1197,
+                    2628,
+                    1617,
+                    2716
                 ],
                 "inference_footprint": {
-                    "co2_emissions_g": 2.98661183243084e-06,
-                    "energy_consumed_kWh": 1.0259287054960925e-08,
-                    "duration_seconds": 3.4801874999830034
+                    "co2_emissions_g": 2.7303755270103266e-06,
+                    "energy_consumed_kWh": 9.379091716997614e-09,
+                    "duration_seconds": 3.515826916998776
                 }
             }
         },
