@@ -1,160 +1,194 @@
 # Proyecto Sistemas de Recomendación con Medición de Huella de Carbono
 
-Este proyecto mide la huella de carbono de Sistemas de Recomendación utilizando la biblioteca CodeCarbon para analizar el impacto ambiental de diferentes algoritmos de recomendación.
+Este repositorio orquesta experimentos de recomendación sobre MovieLens 1M y mide su impacto ambiental con CodeCarbon. Incluye pipelines para preparar datos, entrenar modelos heterogéneos, conservar huellas de entrenamiento e inferencia, analizar resultados y generar visualizaciones.
 
-## Estructura del Proyecto
+## Características Clave
+
+- Seguimiento detallado de CO₂, energía y duración en entrenamiento e inferencia, alimentado por CodeCarbon.
+- Catálogo de 10 modelos (filtrado clásico, factorización, redes neuronales y baselines) definidos en `models/`.
+- Automatización para ejecutar todos los modelos en subconjuntos de 10% a 100% con `run_all_experiments.sh`.
+- Evaluaciones fuera de línea que calculan métricas de ranking (Precision@10, Recall@10, nDCG@10, MAP@10, Hit-Rate, MRR) y diversidad/novelty.
+- Herramientas para auditar recomendaciones individuales, filtrar ítems ya vistos y medir el costo energético de cada listado Top‑10.
+- Scripts de análisis numérico y generación de gráficos comparativos guardados en `analisis/` y `graficos/`.
+
+## Panorama del Repositorio
 
 ```
 .
 ├── README.md
-├── requirements.txt         # Dependencias de Python
-├── analisis_datos.ipynb     # Jupyter notebook para analizar los datos
-├── run_experiment.py        # Script principal para ejecutar experimentos con seguimiento de carbono
-├── preprocessdata.py        # Script para convertir archivos .dat a CSV
-├── prepare_datasets.py      # Script para preparar conjuntos de datos con diferentes tamaños
-├── data/                    # Directorio para conjuntos de datos
-│   ├── ml-1m/              # Dataset MovieLens 1M original
-│   │   ├── ratings.csv     # Calificaciones en formato CSV
-│   │   ├── ratings.dat     # Calificaciones en formato original
-│   │   ├── movies.dat      # Información de películas
-│   │   └── users.dat       # Información de usuarios
-│   ├── ml-latest-small/    # Dataset MovieLens pequeño de muestra
-│   ├── 10/                 # Subconjunto 10% del dataset
-│   │   ├── ratings.csv     # Datos completos (10%)
-│   │   ├── train.csv       # Conjunto de entrenamiento
-│   │   ├── test.csv        # Conjunto de prueba
-│   │   └── antitest.csv    # Conjunto anti-test
-│   ├── 25/                 # Subconjunto 25% del dataset
-│   ├── 50/                 # Subconjunto 50% del dataset
-│   ├── 75/                 # Subconjunto 75% del dataset
-│   └── 100/                # Dataset completo (100%)
-└── models/                  # Directorio para scripts de modelos
-    └── svd_model.py        # Modelo SVD de ejemplo
+├── requirements.txt                # Dependencias principales
+├── preprocessdata.py               # Conversión MovieLens .dat ➜ .csv
+├── prepare_datasets.py             # Submuestreo estratificado y splits 80/20 + antitest
+├── run_experiment_saves.py         # Ejecución estándar con emisiones + métricas + guardado de modelos
+├── run_all_experiments.sh          # Lanza run_experiment_saves.py para todos los modelos y datasets
+├── test_all_individual_predictions.sh # Ejecuta get_top10_recommendations.py para varios usuarios tipo
+├── evaluate_results.py             # Cálculo de RMSE y métricas@10 desde predicciones
+├── evaluate_new_results.py         # Amplía results.json con hit-rate, MAP, MRR, novelty, diversity
+├── get_top10_recommendations.py    # Predicciones Top‑10 para un usuario, con huella energética
+├── predict_single.py               # Verifica que una predicción individual coincida con el batch
+├── create_readable.py              # Convierte IDs a títulos, genera ejemplos legibles
+├── generacion_graficos.py          # Visualizaciones a partir de results_updated.json
+├── analisis_numericos_resultados*.py # Reportes y tablas en analisis/
+├── data/                           # MovieLens procesado + subconjuntos 10/25/50/75/100
+├── models/                         # Implementaciones de algoritmos de recomendación
+├── trained_models/                 # Modelos entrenados y mapas usuario/ítem por porcentaje
+├── results.json                    # Métricas + huellas por modelo y dataset
+├── results_updated.json            # results.json enriquecido con métricas adicionales
+├── individual_results.json         # Huella de recomendaciones Top‑10 por usuario tipo
+├── individual_results_examples.json # Versión legible (títulos MovieLens)
+├── graficos/                       # Gráficos agregados (general, familia, individuales)
+└── analisis/                       # Tablas y hallazgos exportados
 ```
 
-## Instalación
+## Requisitos Previos
 
-### Requisitos Previos
 - Python 3.10 o superior
-- Dataset MovieLens 1M (descargar desde [GroupLens](https://grouplens.org/datasets/movielens/1m/))
+- Dataset MovieLens 1M descargado desde [GroupLens](https://grouplens.org/datasets/movielens/1m/)
+- Dependencias listadas en `requirements.txt`
 
-### Configuración del Entorno
+## Configuración del Entorno
 
-1. **Crear y activar un entorno virtual (recomendado):**
 ```bash
 python3 -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-```
-
-2. **Instalar las dependencias:**
-```bash
+source venv/bin/activate            # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. **Preparar los datos:**
-```bash
-# Convertir archivos .dat a CSV (si es necesario)
-python preprocessdata.py
+## Preparación de Datos
 
-# Crear subconjuntos de datos con diferentes tamaños
-python prepare_datasets.py
-```
+1. Ubica el directorio original `ml-1m` dentro de `data/`.
+2. Convierte los archivos `.dat` a `.csv` (una sola vez):
+     ```bash
+     python preprocessdata.py
+     ```
+3. Genera subconjuntos estratificados (10%, 25%, 50%, 75%, 100%) y sus splits `train/test/antitest`:
+     ```bash
+     python prepare_datasets.py
+     ```
 
-## Uso
+## Ejecución de Experimentos Masivos
 
-### Listar modelos disponibles
-
-```bash
-python3 run_experiment.py --list
-```
-
-### Ejecutar un modelo con seguimiento de carbono
+`run_experiment_saves.py` es el punto de entrada principal. Para un modelo y porcentaje determinados:
 
 ```bash
-python3 run_experiment.py --model ncf_model --dataset_percentage 10
-python3 run_experiment.py --model ncf_model --dataset_percentage 100
-python3 run_experiment.py --model lightgcn_model --dataset_percentage 10
-python3 run_experiment.py --model lightgcn_model --dataset_percentage 100
+python run_experiment_saves.py \
+        --model_name lightfm_model \
+        --dataset_percentage 50
 ```
 
-### Ejemplos de Uso
+El script realiza los pasos siguientes:
+
+- Invoca `preprocess_data()` del modelo para obtener datos listos y mapas opcionales de IDs.
+- Mide la fase de entrenamiento con CodeCarbon (CO₂, kWh, segundos) y guarda el modelo entrenado en `trained_models/<porcentaje>/`.
+- Ejecuta `generate_predictions()` midiendo también la inferencia.
+- Guarda las predicciones en `data/<porcentaje>/<modelo>_predictions.csv`.
+- Calcula RMSE, Precision@10, Recall@10 y nDCG@10 (si hay solapamiento con `test.csv`).
+- Actualiza `results.json` con métricas y huellas, serializando a JSON seguro para tipos NumPy.
+
+### Ejecución para Todos los Modelos y Subconjuntos
 
 ```bash
-# Activar el entorno virtual
-source venv/bin/activate
-
-# Listar todos los modelos disponibles
-python run_experiment.py --list
-
-# Ejecutar experimento con modelo SVD
-python run_experiment.py --model svd_model --dataset_percentage 10
-
-# Procesar datos desde cero
-python preprocessdata.py
-python prepare_datasets.py
+bash run_all_experiments.sh
 ```
 
-## Características
+El guion recorre las listas `MODELS` y `PERCENTAGES`. Modifícalas para incluir/excluir modelos o porcentajes. Las fallas de un modelo no detienen el resto del experimento.
 
-- **Seguimiento de Huella de Carbono**: Utiliza CodeCarbon para medir las emisiones de CO2 durante la ejecución de modelos
-- **Sistema de Modelos Flexible**: Fácil agregar nuevos modelos colocando scripts de Python en el directorio `models/`
-- **Informes Detallados**: Imprime mediciones exhaustivas de emisiones después de cada experimento
-- **Ejecución en Subprocesos**: Los modelos se ejecutan en subprocesos aislados para mediciones precisas
-- **Múltiples Tamaños de Dataset**: Experimentos con conjuntos de datos de diferentes tamaños (10%, 25%, 50%, 75%, 100%)
-- **Preparación Automática de Datos**: Scripts para convertir y preparar automáticamente los conjuntos de datos
-- **Conjuntos Anti-test**: Generación automática de conjuntos anti-test para evaluación completa
-- **Compatibilidad con MovieLens**: Soporte completo para datasets MovieLens 1M y small
+## Evaluación y Visualizaciones
 
+- `evaluate_results.py` ya se emplea dentro de `run_experiment_saves.py` para métricas base (RMSE, Precision@10, Recall@10, nDCG@10).
+- `evaluate_new_results.py` añade Hit-Rate@10, MAP@10, MRR@10, Novelty@10 (bits), y Diversity@10 (1 – similitud promedio) utilizando popularidad, matrices usuario‑ítem y similitud coseno. Ejecuta:
+    ```bash
+    python evaluate_new_results.py \
+            --results results.json \
+            --data-dir data \
+            --output results_updated.json
+    ```
+- `generacion_graficos.py` transforma `results_updated.json` en gráficos (líneas, trade-offs, 3D) dentro de `graficos/general/` y promedios por familia en `graficos/familia/`.
+- `analisis_numericos_resultados.py` y `analisis_numericos_resultados_individuales.py` exportan CSV y reportes `.txt` con porcentajes de cambio, eficiencia energética y análisis por perfil. Los archivos se guardan en `analisis/`.
 
-## Dependencias
+## Predicciones Individuales y Auditoría
 
-- **pandas**: Manipulación y análisis de datos
-- **scikit-surprise**: Biblioteca para sistemas de recomendación
-- **codecarbon**: Seguimiento de emisiones de carbono
-- **psutil**: Utilidades de sistema y procesos
-- **scikit-learn**: Herramientas de aprendizaje automático
-- **numpy<2**: Computación numérica (versión compatible con Surprise)
+- `get_top10_recommendations.py` genera un Top‑10 por usuario:
+    ```bash
+    python get_top10_recommendations.py \
+            --model_name ncf_model \
+            --dataset_percentage 100 \
+            --user_id 4169 \
+            --user_category "Power User"
+    ```
+    Acciones clave:
+    - Carga el modelo entrenado y sus mapas (`trained_models/<porcentaje>/`).
+    - Predice puntuaciones para todos los ítems, filtra los ya vistos (según `train.csv`) y mide la huella de esa inferencia con CodeCarbon.
+    - Agrega resultados a `individual_results.json` (organizado por porcentaje, modelo y perfil) con emisiones, energía y duración.
 
-## Conjuntos de Datos
+- `test_all_individual_predictions.sh` automatiza la ejecución anterior para una lista de perfiles (`USER_DATA`) y porcentajes (`DATASET_PERCS`). Ejecuta todos los modelos compatibles y omite `lightgcn_model`, que no soporta inferencia individual en este flujo.
 
-El proyecto utiliza el dataset **MovieLens 1M** que contiene:
-- **1,000,209 calificaciones** de 6,040 usuarios en 3,952 películas
-- **Calificaciones**: Escala de 1-5 estrellas
-- **Período**: Datos recolectados entre 1996-2018
+- `predict_single.py` contrasta la predicción puntual (`user_id`, `movie_id`) con el batch almacenado en `data/<porcentaje>/<modelo>_predictions.csv`, útil para depuración.
 
-### Subconjuntos Disponibles
-- **10%**: 100,020 calificaciones
-- **25%**: 250,052 calificaciones  
-- **50%**: 500,104 calificaciones
-- **75%**: 750,156 calificaciones
-- **100%**: 1,000,209 calificaciones
+- `create_readable.py` enriquece `individual_results.json` con metadatos de `movies.csv`, produciendo `individual_results_examples.json` con títulos legibles y resúmenes del historial del usuario.
 
-Cada subconjunto incluye división automática en conjuntos de entrenamiento (80%), prueba (20%) y anti-test.
+## Modelos Disponibles
 
-## Scripts Disponibles
+| Archivo | Tipo de modelo | Librerías | Notas relevantes |
+|---------|----------------|-----------|------------------|
+| `models/random_model.py` | Baseline aleatorio | NumPy | No entrena; fija semillas para reproducibilidad.
+| `models/most_popular_model.py` | Popularidad global | pandas | Escala frecuencia a rango 1‑5; guarda `global_average`.
+| `models/svd_model.py` | Factorización SVD (Surprise) | scikit-surprise | Usa `SVD` con `n_factors=100` y `n_epochs=20`.
+| `models/item_knn_model.py` | KNN basado en ítems | scikit-surprise | Similitud coseno, `user_based=False`.
+| `models/user_knn_model.py` | KNN basado en usuarios | scikit-surprise | Similitud coseno, `user_based=True`.
+| `models/lightfm_model.py` | LightFM WARP | lightfm | Matriz dispersa `coo_matrix`, semillas fijadas y predicción determinista.
+| `models/als_model.py` | ALS implícito | implicit | Binariza ratings ≥4, almacena mapas globales y filtra índices inválidos.
+| `models/ncf_model.py` | Neural Collaborative Filtering | PyTorch | Combina GMF + MLP; DataLoader con semillas controladas.
+| `models/multivae_model.py` | Variational Autoencoder | PyTorch | Binariza ratings ≥4, usa CSR y calcula novelty en log‑probabilities.
+| `models/lightgcn_model.py` | LightGCN puro | PyTorch | Entrenamiento BPR con propagación multinivel; inferencia individual no soportada.
 
-- **`preprocessdata.py`**: Convierte archivos .dat de MovieLens a formato CSV
-- **`prepare_datasets.py`**: Crea subconjuntos de datos con diferentes tamaños y divisiones
-- **`run_experiment.py`**: Ejecuta experimentos con seguimiento de huella de carbono
-- **`models/svd_model.py`**: Implementación de ejemplo con algoritmo SVD
+Todos los modelos exponen tres funciones: `preprocess_data`, `train_model` y `generate_predictions`, requisito para que `run_experiment_saves.py` los orqueste.
 
-## Resultados
+## Métricas Calculadas
 
-Los experimentos generan:
-- **Métricas de rendimiento**: RMSE, MAE, precisión, recall
-- **Mediciones de carbono**: Emisiones de CO2, consumo energético
-- **Informes detallados**: Tiempo de ejecución, uso de recursos
-- **Archivos de resultados**: Logs automáticos con CodeCarbon
+- **Rendimiento**
+    - `rmse`: Error cuadrático medio sobre `test.csv` vs predicciones (cuando existen ambos).
+    - `precision_at_10` y `recall_at_10`: Calculadas por usuario con `k=10` y umbral de relevancia 4.0.
+    - `ndcg_at_10`: Ganancia logarítmica normalizada al tope 10.
+    - `hit_rate_at_10`: Fracción de usuarios con al menos un acierto (añadido por `evaluate_new_results.py`).
+    - `map_at_10`, `mrr_at_10`: Media aritmética de precisión acumulada y recíproca del ranking.
+    - `novelty_at_10`: Información promedio (−log₂ popularidad) de los ítems recomendados.
+    - `diversity_at_10`: 1 − similitud media entre ítems recomendados (similitud coseno sobre interacciones).
+
+- **Huella Ambiental** (CodeCarbon)
+    - `co2_emissions_g`: Emisiones estimadas de CO₂ (gramos).
+    - `energy_consumed_kWh`: Energía eléctrica consumida (kWh).
+    - `duration_seconds`: Duración del segmento medido.
+
+## Archivos de Salida Relevantes
+
+- `results.json`: Diccionario `{porcentaje -> modelo -> {training_footprint, prediction_footprint, performance_metrics}}`.
+- `results_updated.json`: Extiende `results.json` con métricas derivadas (hit-rate, MAP, MRR, novelty, diversity).
+- `data/<porcentaje>/<modelo>_predictions.csv`: Predicciones completas sobre `antitest.csv`.
+- `trained_models/<porcentaje>/`: Modelos persistidos (`.pkl`, `.pth`, `.json`) y mapas `*_user_map.json`, `*_item_map.json`.
+- `emissions.csv`: Log acumulado de CodeCarbon.
+- `individual_results.json`: Resultados Top‑10 por perfil, con huella de inferencia.
+- `individual_results_examples.json`: Versión enriquecida con títulos y contexto.
+- `graficos/`: Carpeta de PNG con métricas vs dataset, trade-offs y comparativas 3D.
+- `analisis/`: CSV y TXT con porcentajes de cambio, eficiencia marginal y hallazgos narrativos.
+
+## Flujo de Trabajo Sugerido
+
+1. Preparar entorno y dependencias.
+2. Procesar MovieLens (`preprocessdata.py`) y generar subconjuntos (`prepare_datasets.py`).
+3. Ejecutar `run_all_experiments.sh` o llamadas individuales a `run_experiment_saves.py`.
+4. Enriquecer métricas con `evaluate_new_results.py` y generar gráficos (`generacion_graficos.py`).
+5. Auditar usuarios tipo con `test_all_individual_predictions.sh` y crear la versión legible (`create_readable.py`).
+6. Revisar reportes en `analisis/` y visualizaciones en `graficos/` para documentar hallazgos.
 
 ## Contribuciones
 
-Para contribuir al proyecto:
-1. Fork el repositorio
-2. Crea una rama para tu característica
-3. Implementa tus cambios
-4. Agrega pruebas si es necesario
-5. Envía un pull request
+1. Haz fork del repositorio.
+2. Crea una rama descriptiva.
+3. Implementa la mejora o corrección e incluye pruebas o scripts relevantes.
+4. Ejecuta los pipelines necesarios y adjunta evidencia de resultados.
+5. Abre un pull request describiendo los cambios y su impacto.
 
 ## Licencia
 
-Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE para más detalles.
+Proyecto distribuido bajo licencia MIT. Consulta el archivo `LICENSE` para más detalles.
