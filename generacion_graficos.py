@@ -34,7 +34,8 @@ for dataset_size, models in data.items():
             "map_at_10": float(perf["map_at_10"]),
             "prediction_energy_kWh": float(pred["energy_consumed_kWh"]),
             "training_energy_kWh": float(train["energy_consumed_kWh"]),
-            "total_energy_kWh": float(pred["energy_consumed_kWh"] + train["energy_consumed_kWh"])
+            "total_energy_kWh": float(pred["energy_consumed_kWh"] + train["energy_consumed_kWh"]),
+            "diversity_at_10": float(perf.get("diversity_at_10"))
         })
 
 df = pd.DataFrame(rows)
@@ -112,6 +113,9 @@ plot_line("ndcg_at_10", "NDCG@10", "ndcg_vs_dataset")
 
 # === GRAFICO 1.5: MAP vs Dataset ===
 plot_line("map_at_10", "MAP@10", "map_vs_dataset")
+
+# Grafico 1.8: Diversidad vs Dataset
+plot_line("diversity_at_10", "Diversidad@10", "diversity_vs_dataset")
 
 # === GRAFICO 2: kWh vs Dataset ===
 plot_line("total_energy_kWh", "Energía Total (kWh)", "kwh_vs_dataset", logy=True)
