@@ -1,39 +1,39 @@
 Modelo: als_model
   Mayor mejora de NDCG@10: inf% (Δ 0.0001) al pasar de 10% a 25%
-  Costo energético total asociado: 30.06% (Δ 0.000002 kWh)
-  Último salto≥50%: NDCG -63.77% (Δ -0.0001) | energía 4.48% (Δ 0.000001 kWh)
+  Costo energético total asociado: 9.63% (Δ 0.000001 kWh)
+  Último salto≥50%: NDCG -65.15% (Δ -0.0001) | energía 0.41% (Δ 0.000000 kWh)
 Modelo: item_knn_model
   Mayor mejora de NDCG@10: inf% (Δ 0.0003) al pasar de 10% a 25%
-  Costo energético total asociado: 80.94% (Δ 0.000116 kWh)
+  Costo energético total asociado: 116.69% (Δ 0.000127 kWh)
 Modelo: lightfm_model
-  Mayor mejora de NDCG@10: 193.99% (Δ 0.0009) al pasar de 10% a 25%
-  Costo energético total asociado: -15.03% (Δ -0.000001 kWh)
-  Último salto≥50%: NDCG 36.15% (Δ 0.0003) | energía 9.75% (Δ 0.000001 kWh)
+  Mayor mejora de NDCG@10: inf% (Δ 0.0014) al pasar de 10% a 25%
+  Costo energético total asociado: 11.05% (Δ 0.000000 kWh)
+  Último salto≥50%: NDCG 44.73% (Δ 0.0004) | energía 5.37% (Δ 0.000000 kWh)
 Modelo: lightgcn_model
-  Mayor mejora de NDCG@10: 69.80% (Δ 0.0006) al pasar de 75% a 100%
-  Costo energético total asociado: 44.51% (Δ 0.000689 kWh)
-  Último salto≥50%: NDCG 69.80% (Δ 0.0006) | energía 44.51% (Δ 0.000689 kWh)
+  Mayor mejora de NDCG@10: 479.04% (Δ 0.0006) al pasar de 10% a 25%
+  Costo energético total asociado: 131.20% (Δ 0.000134 kWh)
+  Último salto≥50%: NDCG 60.23% (Δ 0.0005) | energía 55.81% (Δ 0.000565 kWh)
 Modelo: most_popular_model
-  Mayor mejora de NDCG@10: 225.14% (Δ 0.0000) al pasar de 50% a 75%
-  Costo energético total asociado: -28.42% (Δ -0.000001 kWh)
-  Último salto≥50%: NDCG -82.73% (Δ -0.0000) | energía 13.52% (Δ 0.000000 kWh)
+  Mayor mejora de NDCG@10: 69.56% (Δ 0.0005) al pasar de 75% a 100%
+  Costo energético total asociado: 69.08% (Δ 0.000002 kWh)
+  Último salto≥50%: NDCG 69.56% (Δ 0.0005) | energía 69.08% (Δ 0.000002 kWh)
 Modelo: multivae_model
-  Mayor mejora de NDCG@10: 71.17% (Δ 0.0003) al pasar de 10% a 25%
-  Costo energético total asociado: 196.51% (Δ 0.000812 kWh)
-  Último salto≥50%: NDCG 25.96% (Δ 0.0002) | energía 22.21% (Δ 0.000703 kWh)
+  Mayor mejora de NDCG@10: 64.87% (Δ 0.0004) al pasar de 10% a 25%
+  Costo energético total asociado: 214.58% (Δ 0.000809 kWh)
+  Último salto≥50%: NDCG 35.71% (Δ 0.0002) | energía 23.64% (Δ 0.000748 kWh)
 Modelo: ncf_model
-  Mayor mejora de NDCG@10: 100.80% (Δ 0.0002) al pasar de 75% a 100%
-  Costo energético total asociado: 32.89% (Δ 0.000221 kWh)
-  Último salto≥50%: NDCG 100.80% (Δ 0.0002) | energía 32.89% (Δ 0.000221 kWh)
+  Mayor mejora de NDCG@10: inf% (Δ 0.0002) al pasar de 10% a 25%
+  Costo energético total asociado: 35.47% (Δ 0.000068 kWh)
+  Último salto≥50%: NDCG 24.84% (Δ 0.0000) | energía 40.62% (Δ 0.000260 kWh)
 Modelo: random_model
-  Mayor mejora de NDCG@10: 729.62% (Δ 0.0001) al pasar de 50% a 75%
-  Costo energético total asociado: -20.37% (Δ -0.000000 kWh)
-  Último salto≥50%: NDCG -79.07% (Δ -0.0001) | energía 4.63% (Δ 0.000000 kWh)
+  Mayor mejora de NDCG@10: 723.49% (Δ 0.0001) al pasar de 50% a 75%
+  Costo energético total asociado: -24.59% (Δ -0.000000 kWh)
+  Último salto≥50%: NDCG -79.15% (Δ -0.0001) | energía 18.90% (Δ 0.000000 kWh)
 Modelo: svd_model
-  Mayor mejora de NDCG@10: 17.78% (Δ 0.0000) al pasar de 50% a 75%
-  Costo energético total asociado: 6.72% (Δ 0.000008 kWh)
-  Último salto≥50%: NDCG 7.27% (Δ 0.0000) | energía -13.14% (Δ -0.000016 kWh)
+  Mayor mejora de NDCG@10: 22.58% (Δ 0.0001) al pasar de 50% a 75%
+  Costo energético total asociado: -16.73% (Δ -0.000019 kWh)
+  Último salto≥50%: NDCG -15.04% (Δ -0.0001) | energía 2.66% (Δ 0.000002 kWh)
 Modelo: user_knn_model
-  Mayor mejora de NDCG@10: 761.80% (Δ 0.0002) al pasar de 10% a 25%
-  Costo energético total asociado: -5.37% (Δ -0.000007 kWh)
-  Último salto≥50%: NDCG -24.93% (Δ -0.0000) | energía -20.61% (Δ -0.000037 kWh)
+  Mayor mejora de NDCG@10: inf% (Δ 0.0004) al pasar de 10% a 25%
+  Costo energético total asociado: -12.97% (Δ -0.000016 kWh)
+  Último salto≥50%: NDCG 6.53% (Δ 0.0000) | energía 19.09% (Δ 0.000025 kWh)
