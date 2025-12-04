@@ -7,7 +7,7 @@ Este repositorio orquesta experimentos de recomendación sobre MovieLens 1M y mi
 - Seguimiento detallado de CO₂, energía y duración en entrenamiento e inferencia, alimentado por CodeCarbon.
 - Catálogo de 10 modelos (filtrado clásico, factorización, redes neuronales y baselines) definidos en `models/`.
 - Automatización para ejecutar todos los modelos en subconjuntos de 10% a 100% con `run_all_experiments.sh`.
-- Evaluaciones fuera de línea que calculan métricas de ranking (Precision@10, Recall@10, nDCG@10, MAP@10, Hit-Rate, MRR) y diversidad/novelty.
+- Evaluaciones que calculan métricas de ranking (Precision@10, Recall@10, nDCG@10, MAP@10, Hit-Rate, MRR) y diversidad/novelty.
 - Herramientas para auditar recomendaciones individuales, filtrar ítems ya vistos y medir el costo energético de cada listado Top‑10.
 - Scripts de análisis numérico y generación de gráficos comparativos guardados en `analisis/` y `graficos/`.
 
@@ -181,14 +181,5 @@ Todos los modelos exponen tres funciones: `preprocess_data`, `train_model` y `ge
 5. Auditar usuarios tipo con `test_all_individual_predictions.sh` y crear la versión legible (`create_readable.py`).
 6. Revisar reportes en `analisis/` y visualizaciones en `graficos/` para documentar hallazgos.
 
-## Contribuciones
-
-1. Haz fork del repositorio.
-2. Crea una rama descriptiva.
-3. Implementa la mejora o corrección e incluye pruebas o scripts relevantes.
-4. Ejecuta los pipelines necesarios y adjunta evidencia de resultados.
-5. Abre un pull request describiendo los cambios y su impacto.
-
-## Licencia
-
-Proyecto distribuido bajo licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+## Aceder a dataset Books Crossing
+Se debe cambiar de la rama main a la rama Books la cual realiza los mismos experimentos pero adaptados a ese dataset.
