@@ -183,3 +183,6 @@ Todos los modelos exponen tres funciones: `preprocess_data`, `train_model` y `ge
 
 ## Aceder a dataset Books Crossing
 Se debe cambiar de la rama main a la rama Books la cual realiza los mismos experimentos pero adaptados a ese dataset.
+
+## Referencias
+Como apoyo para la realizacion de este codigo se hizo uso del agente de IA GPT codex 5 integrado en VSC
